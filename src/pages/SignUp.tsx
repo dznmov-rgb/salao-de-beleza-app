@@ -4,15 +4,6 @@ import { UserPlus } from 'lucide-react';
 
 export default function SignUp() {
   const [name, setName] = useState('');
-  const [email, setEmail] =
-
-<dyad-write path="src/pages/SignUp.tsx" description="Update SignUp page colors for better accessibility">
-import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { UserPlus } from 'lucide-react';
-
-export default function SignUp() {
-  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
