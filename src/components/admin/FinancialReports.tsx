@@ -1,18 +1,28 @@
 import { useState, useEffect } from 'react';
-import { DollarSign } from 'lucide-react';
+import { DollarSign, CalendarCheck, CalendarX, CalendarClock } from 'lucide-react'; // Adicionando novos ícones
 import { supabase } from '../../lib/supabase';
 
 export default function FinancialReports() {
   const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-  const [totalRevenue, setTotalRevenue] = useState(0);
+  const [metrics, setMetrics] = useState({
+    totalRevenue: 0,
+    completedAppointments: 0,
+    canceledAppointments: 0,
+    pendingAppointments: 0,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   const fetchFinancialData = async () => {
     setLoading(true);
     setError('');
-    setTotalRevenue(0);
+    setMetrics({
+      totalRevenue: 0,
+      completedAppointments: 0,
+      canceledAppointments: 0,
+      pendingAppointments: 0,
+    });
 
     try {
       const { data: appointments, error } = await supabase
@@ -21,20 +31,35 @@ export default function FinancialReports() {
           status,
           servico:servicos(preco)
         `)
-        .eq('status', 'concluido')
         .gte('data_hora_inicio', `${startDate}T00:00:00.000Z`)
         .lte('data_hora_inicio', `${endDate}T23:59:59.999Z`);
 
       if (error) throw error;
 
       let calculatedRevenue = 0;
+      let completedCount = 0;
+      let canceledCount = 0;
+      let pendingCount = 0;
+
       if (appointments) {
-        calculatedRevenue = appointments.reduce((sum, appt) => {
-          // Certifica-se de que 'servico' e 'preco' existem antes de somar
-          return sum + (appt.servico?.[0]?.preco || 0); // Acessa o preço do primeiro serviço no array
-        }, 0);
+        appointments.forEach(appt => {
+          if (appt.status === 'concluido') {
+            calculatedRevenue += (appt.servico?.[0]?.preco || 0);
+            completedCount++;
+          } else if (appt.status === 'cancelado') {
+            canceledCount++;
+          } else if (appt.status === 'agendado') {
+            pendingCount++;
+          }
+        });
       }
-      setTotalRevenue(calculatedRevenue);
+
+      setMetrics({
+        totalRevenue: calculatedRevenue,
+        completedAppointments: completedCount,
+        canceledAppointments: canceledCount,
+        pendingAppointments: pendingCount,
+      });
 
     } catch (err: any) {
       console.error('Erro ao buscar dados financeiros:', err);
@@ -84,29 +109,64 @@ export default function FinancialReports() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-        {loading ? (
-          <div className="text-center text-slate-500 flex flex-col items-center">
-            <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mb-3"></div>
-            Carregando relatório...
+      {loading ? (
+        <div className="text-center text-slate-500 flex flex-col items-center">
+          <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-900 rounded-full animate-spin mb-3"></div>
+          Carregando relatório...
+        </div>
+      ) : error ? (
+        <div className="text-center text-red-600 p-4 bg-red-50 rounded-lg">
+          {error}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {/* Card de Receita Total */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center space-x-4">
+            <div className="p-3 bg-green-100 rounded-full">
+              <DollarSign className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Receita Total</p>
+              <p className="text-2xl font-bold text-green-700">
+                R$ {metrics.totalRevenue.toFixed(2).replace('.', ',')}
+              </p>
+            </div>
           </div>
-        ) : error ? (
-          <div className="text-center text-red-600 p-4 bg-red-50 rounded-lg">
-            {error}
+
+          {/* Card de Agendamentos Concluídos */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center space-x-4">
+            <div className="p-3 bg-lime-100 rounded-full">
+              <CalendarCheck className="w-6 h-6 text-lime-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Agendamentos Concluídos</p>
+              <p className="text-2xl font-bold text-slate-900">{metrics.completedAppointments}</p>
+            </div>
           </div>
-        ) : (
-          <div className="text-center">
-            <DollarSign className="w-16 h-16 text-green-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">Receita Total no Período</h3>
-            <p className="text-5xl font-bold text-green-700">
-              R$ {totalRevenue.toFixed(2).replace('.', ',')}
-            </p>
-            <p className="text-slate-600 mt-2">
-              De {new Date(startDate).toLocaleDateString('pt-BR')} a {new Date(endDate).toLocaleDateString('pt-BR')}
-            </p>
+
+          {/* Card de Agendamentos Pendentes */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center space-x-4">
+            <div className="p-3 bg-orange-100 rounded-full">
+              <CalendarClock className="w-6 h-6 text-orange-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Agendamentos Pendentes</p>
+              <p className="text-2xl font-bold text-slate-900">{metrics.pendingAppointments}</p>
+            </div>
           </div>
-        )}
-      </div>
+
+          {/* Card de Agendamentos Cancelados */}
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex items-center space-x-4">
+            <div className="p-3 bg-red-100 rounded-full">
+              <CalendarX className="w-6 h-6 text-red-600" />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500">Agendamentos Cancelados</p>
+              <p className="text-2xl font-bold text-slate-900">{metrics.canceledAppointments}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
