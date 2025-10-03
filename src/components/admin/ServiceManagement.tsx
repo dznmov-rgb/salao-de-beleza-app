@@ -207,7 +207,7 @@ export default function ServiceManagement() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium s-700 mb-2">
                   Duração Média (minutos)
                 </label>
                 <input
