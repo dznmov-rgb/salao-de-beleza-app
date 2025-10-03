@@ -73,8 +73,10 @@ export default function ScheduleView() {
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">Agenda Completa</h2>
+    <div>
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold text-slate-900">Agenda Completa</h2>
+      </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4 mb-6">
         <div className="grid grid-cols-1 gap-4">
@@ -112,28 +114,38 @@ export default function ScheduleView() {
           <p className="text-slate-600">Nenhum agendamento encontrado para esta data</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {appointments.map((appointment) => (
             <div
               key={appointment.id}
-              className="bg-white rounded-xl shadow-sm border border-slate-200 p-4"
+              className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2 text-slate-700">
-                  <Clock className="w-4 h-4" />
-                  <span className="font-semibold text-sm">
-                    {new Date(appointment.data_hora).toLocaleTimeString('pt-BR', {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </span>
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900">
+                      {new Date(appointment.data_hora).toLocaleTimeString('pt-BR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </h3>
+                    <p className="text-sm text-slate-600 mt-1">
+                      {new Date(appointment.data_hora).toLocaleDateString('pt-BR', {
+                        day: 'numeric',
+                        month: 'short'
+                      })}
+                    </p>
+                  </div>
                 </div>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
                   {getStatusLabel(appointment.status)}
                 </span>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-slate-500" />
                   <span className="text-sm font-medium text-slate-900">{appointment.cliente_nome}</span>

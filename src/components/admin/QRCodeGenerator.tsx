@@ -38,7 +38,9 @@ export default function QRCodeGenerator() {
 
   return (
     <div>
-      <h2 className="text-3xl font-bold text-slate-900 mb-8">Gerador de QR Code</h2>
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold text-slate-900">Gerador de QR Code</h2>
+      </div>
 
       <div className="max-w-2xl">
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
