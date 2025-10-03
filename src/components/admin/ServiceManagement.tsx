@@ -127,7 +127,7 @@ export default function ServiceManagement() {
                     : 'bg-green-100 text-green-700 hover:bg-green-200'
                 }`}
               >
-                {service.ativo ? 'Inativar' : 'Ativar'}
+                {service.ativo ? 'Desativar' : 'Ativar'}
               </button>
             </div>
           </div>
