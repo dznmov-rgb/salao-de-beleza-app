@@ -19,10 +19,10 @@ export default function ScheduleView() {
   const loadProfessionals = async () => {
     const { data } = await supabase
       .from('profiles')
-      .select('id, full_name') // Corrigido: nome para full_name
+      .select('id, full_name')
       .eq('role', 'professional')
       .eq('is_working', true)
-      .order('full_name'); // Corrigido: nome para full_name
+      .order('full_name');
     if (data) setProfessionals(data);
   };
 
@@ -32,7 +32,7 @@ export default function ScheduleView() {
       .select(`
         *,
         servico:servicos(*),
-        profissional:profiles(*)
+        profissional:profiles(full_name)
       `)
       .gte('data_hora_inicio', `${selectedDate}T00:00:00`)
       .lte('data_hora_inicio', `${selectedDate}T23:59:59`)
@@ -100,7 +100,7 @@ export default function ScheduleView() {
               <option value="all">Todos</option>
               {professionals.map((prof) => (
                 <option key={prof.id} value={prof.id}>
-                  {prof.full_name} {/* Corrigido: prof.nome para prof.full_name */}
+                  {prof.full_name}
                 </option>
               ))}
             </select>
@@ -164,7 +164,7 @@ export default function ScheduleView() {
 
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-900">Prof: {appointment.profissional.full_name}</span> {/* Corrigido: appointment.profissional.nome para appointment.profissional.full_name */}
+                  <span className="text-sm text-slate-900">Prof: {appointment.profissional?.full_name || 'N/A'}</span>
                 </div>
               </div>
             </div>
