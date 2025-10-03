@@ -129,7 +129,7 @@ export default function ProfessionalDashboard() {
 
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100">
+    <div className="min-h-screen flex flex-col bg-gray-50">
       {isModalOpen && selectedEventInfo && (
         <AppointmentDetailsModal 
           eventInfo={selectedEventInfo} 
@@ -138,14 +138,14 @@ export default function ProfessionalDashboard() {
         />
       )}
       
-      <header className="bg-slate-900 p-4 shadow-lg flex justify-between items-center">
+      <header className="bg-gradient-to-r from-blue-600 to-indigo-600 p-4 shadow-lg flex justify-between items-center">
         <h1 className="text-xl font-bold text-white">Minha Agenda - {firstName}</h1>
         <div className="flex items-center space-x-4">
           
           {/* BOTÃO DE STATUS DE TRABALHO */}
           <button 
             onClick={toggleWorkingStatus}
-            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition ${isWorking ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
+            className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition ${isWorking ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'}`}
           >
             {isWorking ? <ToggleRight size={20} /> : <ToggleLeft size={20} />}
             <span className="text-white font-medium">{isWorking ? 'Em Expediente' : 'Off-line'}</span>
@@ -153,7 +153,7 @@ export default function ProfessionalDashboard() {
 
           <button 
             onClick={signOut}
-            className="text-white flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-slate-800 transition"
+            className="text-white flex items-center space-x-2 px-3 py-2 rounded-lg hover:bg-blue-700 transition"
           >
             <LogOut size={18} />
             <span>Sair</span>
@@ -162,33 +162,33 @@ export default function ProfessionalDashboard() {
       </header>
 
       <main className="flex-1 p-6">
-        <h2 className="text-2xl font-bold text-slate-800 mb-6">Seus Atendimentos</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Seus Atendimentos</h2>
         
         {/* CARDS DE RESUMO VISUALMENTE MELHORADOS */}
         <div className="grid grid-cols-2 gap-4 mb-8">
-            <div className="bg-white p-6 rounded-lg shadow-xl border-l-4 border-blue-500">
-                <p className="text-slate-500 text-sm">Próximos Agendamentos</p>
+            <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-blue-500">
+                <p className="text-gray-500 text-sm">Próximos Agendamentos</p>
                 <p className="text-3xl font-extrabold text-blue-600 mt-1">{totalAgendados}</p>
             </div>
-            <div className="bg-white p-6 rounded-lg shadow-xl border-l-4 border-green-500">
-                <p className="text-slate-500 text-sm">Concluídos no Dia</p>
+            <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-500">
+                <p className="text-gray-500 text-sm">Concluídos no Dia</p>
                 <p className="text-3xl font-extrabold text-green-600 mt-1">{totalConcluidos}</p>
             </div>
         </div>
 
         {/* NAVEGAÇÃO DE DATA (FOCO DO DIA) */}
         <div className="flex justify-between items-center mb-6 p-3 bg-white rounded-lg shadow-md">
-            <button onClick={handlePrevDay} className="p-2 text-slate-800 hover:bg-slate-100 rounded-full">{"<"}</button>
-            <span className="font-semibold text-xl text-slate-800">{displayDate}</span>
-            <button onClick={handleNextDay} className="p-2 text-slate-800 hover:bg-slate-100 rounded-full">{">"}</button>
-            <button onClick={handleToday} className="text-sm bg-slate-200 px-3 py-1 rounded-lg hover:bg-slate-300">Hoje</button>
+            <button onClick={handlePrevDay} className="p-2 text-gray-800 hover:bg-gray-100 rounded-full">{"<"}</button>
+            <span className="font-semibold text-xl text-gray-800">{displayDate}</span>
+            <button onClick={handleNextDay} className="p-2 text-gray-800 hover:bg-gray-100 rounded-full">{">"}</button>
+            <button onClick={handleToday} className="text-sm bg-blue-100 px-3 py-1 rounded-lg hover:bg-blue-200">Hoje</button>
         </div>
 
         {/* LISTA DE AGENDAMENTOS DO DIA */}
-        <h3 className="text-xl font-bold text-slate-800 mb-3">Agenda de {displayDate}</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-3">Agenda de {displayDate}</h3>
 
         {loading ? <p>Carregando...</p> : appointmentsToday.length === 0 ? (
-          <div className="bg-white p-6 rounded-lg text-center text-slate-500 shadow-md">Nenhum agendamento para esta data.</div>
+          <div className="bg-white p-6 rounded-lg text-center text-gray-500 shadow-md">Nenhum agendamento para esta data.</div>
         ) : (
           <div className="space-y-4 mb-10">
             {appointmentsToday.map(appt => (
@@ -198,12 +198,12 @@ export default function ProfessionalDashboard() {
                 className={`bg-white p-5 rounded-xl shadow-lg hover:shadow-2xl transition cursor-pointer border-l-4 ${statusMap[appt.status as keyof typeof statusMap].border} flex justify-between items-start`}
               >
                 <div className="flex items-center space-x-5">
-                    <div className="flex flex-col items-center justify-center bg-slate-900 text-white p-3 rounded-lg w-16 h-16 flex-shrink-0">
+                    <div className="flex flex-col items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-600 text-white p-3 rounded-lg w-16 h-16 flex-shrink-0">
                         <span className="text-lg font-bold">{new Date(appt.data_hora_inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <div>
-                        <p className="font-extrabold text-lg text-slate-800">{appt.cliente_nome}</p>
-                        <div className="text-sm text-slate-600 space-y-0.5 mt-1">
+                        <p className="font-extrabold text-lg text-gray-900">{appt.cliente_nome}</p>
+                        <div className="text-sm text-gray-600 space-y-0.5 mt-1">
                             <div className="flex items-center space-x-1"><Scissors size={14} className="flex-shrink-0" /><span>{appt.servicos.nome_servico}</span></div>
                             <div className="flex items-center space-x-1"><Phone size={14} className="flex-shrink-0" /><span>{appt.cliente_telefone}</span></div>
                         </div>
@@ -213,7 +213,7 @@ export default function ProfessionalDashboard() {
                     <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusMap[appt.status as keyof typeof statusMap].color}`}>
                         {statusMap[appt.status as keyof typeof statusMap].text}
                     </span>
-                    <span className="text-slate-400 text-xs mt-2">Clique para Ações</span>
+                    <span className="text-gray-400 text-xs mt-2">Clique para Ações</span>
                 </div>
               </div>
             ))}
@@ -222,19 +222,19 @@ export default function ProfessionalDashboard() {
         
         {/* BLOCO: AGENDAMENTOS FUTUROS (Se houver) */}
         {futureAppointments.length > 0 && (
-          <div className="mt-8 pt-6 border-t border-slate-300">
-            <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center space-x-2">
+          <div className="mt-8 pt-6 border-t border-gray-300">
+            <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
                 <span>Próximos Agendamentos Futuros ({futureAppointments.length})</span>
             </h3>
            
             <div className="space-y-3">
                 {futureAppointments.map(appt => (
-                    <div key={appt.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex justify-between items-center text-slate-700">
+                    <div key={appt.id} className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 flex justify-between items-center text-gray-700">
                         <div className="flex items-center space-x-3">
                             <ArrowRight size={16} className="text-green-500" />
                             <div>
                                 <p className="font-medium">{appt.cliente_nome} ({appt.servicos.nome_servico})</p>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-gray-500">
                                     {new Date(appt.data_hora_inicio).toLocaleDateString('pt-BR', { dateStyle: 'short' })} às 
                                     {new Date(appt.data_hora_inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                 </p>

@@ -181,34 +181,34 @@ export default function QuickAppointment() {
   };
 
   const renderStepContent = () => {
-    if (loading) return <p className="text-center text-slate-500">Carregando...</p>;
+    if (loading) return <p className="text-center text-gray-500">Carregando...</p>;
     if (error) return <p className="text-center text-red-600">{error}</p>;
     switch (step) {
       case 1: // Identificação
         return (
           <form onSubmit={handleIdentificationSubmit} className="space-y-4">
-            <h1 className="text-2xl font-bold text-slate-800 text-center mb-6">Identificação</h1>
+            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Identificação</h1>
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">Seu Nome Completo</label>
-              <input id="name" type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg" required />
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Seu Nome Completo</label>
+              <input id="name" type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
             </div>
             <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1">Seu Telefone (WhatsApp)</label>
-              <input id="phone" type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} className="w-full px-4 py-2 border border-slate-300 rounded-lg" required />
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Seu Telefone (WhatsApp)</label>
+              <input id="phone" type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
             </div>
-            <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-lg font-medium hover:bg-slate-800">Continuar</button>
+            <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Continuar</button>
           </form>
         );
       case 2: // Escolha o Serviço
         return (
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 text-center mb-6">Escolha o Serviço</h1>
+            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Escolha o Serviço</h1>
             <div className="space-y-3">
               {services.map(service => (
-                <button key={service.id} onClick={() => { setSelectedService(service); handleNextStep(); }} className="w-full text-left p-4 border rounded-lg hover:bg-slate-50 hover:border-slate-900 transition">
+                <button key={service.id} onClick={() => { setSelectedService(service); handleNextStep(); }} className="w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition">
                   <div className="flex justify-between items-center">
-                    <span className="font-semibold text-slate-700">{service.nome_servico}</span>
-                    <span className="font-bold text-slate-900">R$ {service.preco.toFixed(2).replace('.', ',')}</span>
+                    <span className="font-semibold text-gray-700">{service.nome_servico}</span>
+                    <span className="font-bold text-gray-900">R$ {service.preco.toFixed(2).replace('.', ',')}</span>
                   </div>
                 </button>
               ))}
@@ -218,12 +218,12 @@ export default function QuickAppointment() {
       case 3: // Escolha o Profissional
         return (
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 text-center mb-6">Escolha o Profissional</h1>
+            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Escolha o Profissional</h1>
             <div className="space-y-3">
-              <button onClick={() => { setSelectedProfessional('any'); handleNextStep(); }} className="w-full text-left p-4 border rounded-lg hover:bg-slate-50 hover:border-slate-900 transition bg-slate-50 font-semibold text-slate-900">Sem Preferência</button>
+              <button onClick={() => { setSelectedProfessional('any'); handleNextStep(); }} className="w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition bg-blue-50 font-semibold text-gray-900">Sem Preferência</button>
               {professionals.map(pro => (
-                <button key={pro.id} onClick={() => { setSelectedProfessional(pro); handleNextStep(); }} className="w-full text-left p-4 border rounded-lg hover:bg-slate-50 hover:border-slate-900 transition">
-                  <span className="font-semibold text-slate-700">{pro.nome}</span>
+                <button key={pro.id} onClick={() => { setSelectedProfessional(pro); handleNextStep(); }} className="w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition">
+                  <span className="font-semibold text-gray-700">{pro.nome}</span>
                 </button>
               ))}
             </div>
@@ -232,12 +232,12 @@ export default function QuickAppointment() {
       case 4: // Escolha Data e Hora
         return (
           <div>
-            <h1 className="text-2xl font-bold text-slate-800 text-center mb-6">Escolha o Horário</h1>
+            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Escolha o Horário</h1>
             <div className="mb-6">
-              <p className="text-sm font-medium text-slate-700 mb-2">Selecione o Dia:</p>
+              <p className="text-sm font-medium text-gray-700 mb-2">Selecione o Dia:</p>
               <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                 {getNext7Days().map(day => (
-                  <button key={day.toISOString()} onClick={() => handleDateSelect(day)} className={`p-2 border rounded-lg text-center ${selectedDate?.toDateString() === day.toDateString() ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}>
+                  <button key={day.toISOString()} onClick={() => handleDateSelect(day)} className={`p-2 border border-gray-300 rounded-lg text-center ${selectedDate?.toDateString() === day.toDateString() ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'}`}>
                     <div className="text-xs">{day.toLocaleDateString('pt-BR', { weekday: 'short' })}</div>
                     <div className="font-bold">{day.getDate()}</div>
                   </button>
@@ -246,17 +246,17 @@ export default function QuickAppointment() {
             </div>
             {selectedDate && (
               <div>
-                <p className="text-sm font-medium text-slate-700 mb-2">Horários Disponíveis:</p>
-                {loading ? <p className="text-center text-slate-500">Calculando...</p> : availableSlots.length > 0 ? (
+                <p className="text-sm font-medium text-gray-700 mb-2">Horários Disponíveis:</p>
+                {loading ? <p className="text-center text-gray-500">Calculando...</p> : availableSlots.length > 0 ? (
                   <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
                     {availableSlots.map(slot => (
-                      <button key={slot.toISOString()} onClick={() => { setSelectedDateTime(slot); handleNextStep(); }} className="p-2 border rounded-lg hover:bg-slate-900 hover:text-white transition">
+                      <button key={slot.toISOString()} onClick={() => { setSelectedDateTime(slot); handleNextStep(); }} className="p-2 border border-gray-300 rounded-lg hover:bg-blue-600 hover:text-white transition">
                         {slot.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </button>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-center text-slate-500">Nenhum horário vago para este dia.</p>
+                  <p className="text-center text-gray-500">Nenhum horário vago para este dia.</p>
                 )}
               </div>
             )}
@@ -265,22 +265,22 @@ export default function QuickAppointment() {
       case 5: // Confirmação
         return (
           <div className="space-y-4">
-            <h1 className="text-2xl font-bold text-slate-800 text-center mb-6">Confirme seu Agendamento</h1>
-            <div className="p-4 border rounded-lg bg-slate-50 space-y-2 text-slate-700">
+            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Confirme seu Agendamento</h1>
+            <div className="p-4 border border-gray-300 rounded-lg bg-gray-50 space-y-2 text-gray-700">
               <p><strong>Nome:</strong> {clientName}</p>
               <p><strong>Serviço:</strong> {selectedService?.nome_servico}</p>
               <p><strong>Profissional:</strong> {selectedProfessional === 'any' ? 'Qualquer um' : selectedProfessional?.nome}</p>
               <p><strong>Data e Hora:</strong> {selectedDateTime?.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) || 'A definir'}</p>
             </div>
-            <button onClick={handleConfirmAppointment} disabled={loading} className="w-full bg-slate-900 text-white py-3 rounded-lg font-medium hover:bg-slate-800">Confirmar Agendamento</button>
+            <button onClick={handleConfirmAppointment} disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Confirmar Agendamento</button>
           </div>
         );
       case 6: // Sucesso
         return (
           <div className="text-center">
             <h1 className="text-2xl font-bold text-green-600 mb-4">Agendamento Confirmado!</h1>
-            <p className="text-slate-600">Seu horário foi marcado com sucesso. Mal podemos esperar para te ver!</p>
-            <a href="/" className="mt-6 inline-block w-full bg-slate-900 text-white py-3 rounded-lg font-medium hover:bg-slate-800">Voltar para o Início</a>
+            <p className="text-gray-600">Seu horário foi marcado com sucesso. Mal podemos esperar para te ver!</p>
+            <a href="/" className="mt-6 inline-block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Voltar para o Início</a>
           </div>
         );
       default:
@@ -289,10 +289,10 @@ export default function QuickAppointment() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col items-center p-4 pt-10">
+    <div className="min-h-screen bg-gray-100 flex flex-col items-center p-4 pt-10">
       <div className="w-full max-w-lg">
         {step > 1 && step < 6 ? (
-          <button onClick={handleBackStep} className="inline-flex items-center text-slate-600 hover:text-slate-900 mb-4">
+          <button onClick={handleBackStep} className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
             <ArrowLeft size={16} className="mr-1" />
             Voltar
           </button>
