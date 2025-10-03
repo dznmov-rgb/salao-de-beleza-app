@@ -69,7 +69,7 @@ export default function ProfessionalDashboard() {
         .lte('data_hora_inicio', targetDayEnd.toISOString())
         .order('data_hora_inicio', { ascending: true });
       
-      setAppointmentsToday(todayData as Appointment[]);
+      setAppointmentsToday(todayData as unknown as Appointment[]);
 
       // 2. BUSCA AGENDAMENTOS FUTUROS (A PARTIR DE AMANHÃ)
       const { data: futureData } = await supabase
@@ -80,7 +80,7 @@ export default function ProfessionalDashboard() {
         .gte('data_hora_inicio', tomorrowStart.toISOString())
         .order('data_hora_inicio', { ascending: true });
       
-      setFutureAppointments(futureData as Appointment[]);
+      setFutureAppointments(futureData as unknown as Appointment[]);
 
     } catch (error) {
       console.error("Erro ao buscar agenda do profissional:", error);
