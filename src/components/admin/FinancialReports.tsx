@@ -1,4 +1,4 @@
-import { DollarSign } from 'lucide-react';
+import { DollarSign, TrendingUp, Calendar, Scissors, BarChart3 } from 'lucide-react';
 
 export default function FinancialReports() {
   return (
