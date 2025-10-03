@@ -185,7 +185,7 @@ export default function AdminDashboard() {
       
       if (error) throw error;
       
-      const totalRevenue = data.reduce((acc, current) => acc + (current.servicos?.preco || 0), 0);
+      const totalRevenue = data.reduce((acc, current) => acc + (current.servicos?.[0]?.preco || 0), 0);
       setReportData({ totalRevenue });
     } catch (error) {
       console.error('Erro ao buscar dados do relatório:', error);
