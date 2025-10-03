@@ -15,7 +15,8 @@ import ServiceManagement from '../components/admin/ServiceManagement';
 import ScheduleView from '../components/admin/ScheduleView';
 import Clientes from './Clientes';
 import FinancialReports from '../components/admin/FinancialReports';
-import QRCodeGenerator from '../components/QRCodeGenerator'; // Importa o componente correto
+import QRCodeGenerator from '../components/QRCodeGenerator';
+import AdminDashboardOverview from '../components/admin/AdminDashboardOverview'; // Importa o novo componente
 
 const menuItems = [
   { name: 'Dashboard', icon: LayoutDashboard },
@@ -28,23 +29,13 @@ const menuItems = [
 ];
 
 export default function AdminDashboard() {
-  const { signOut, profile } = useAuth();
+  const { signOut } = useAuth(); // 'profile' removido daqui
   const [activeTab, setActiveTab] = useState('Dashboard');
 
   const renderContent = () => {
     switch (activeTab) {
       case 'Dashboard':
-        return (
-          <div>
-            <h2 className="text-3xl font-bold text-slate-900 mb-8">Dashboard</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Bem-vindo, {profile?.full_name}</h3>
-                <p className="text-slate-600">Sistema de gestão para salão de beleza</p>
-              </div>
-            </div>
-          </div>
-        );
+        return <AdminDashboardOverview />; // Renderiza o novo componente aqui
       case 'Equipe':
         return <TeamManagement />;
       case 'Serviços':
