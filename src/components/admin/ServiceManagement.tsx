@@ -80,7 +80,8 @@ export default function ServiceManagement() {
       
       if (error) throw error;
       
-      loadServices();
+      // Recarrega a lista de serviços para atualizar a UI
+      await loadServices();
     } catch (error) {
       console.error('Erro ao alternar status do serviço:', error);
     }
@@ -113,15 +114,21 @@ export default function ServiceManagement() {
         {services.map((service) => (
           <div
             key={service.id}
-            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
+            className={`bg-white rounded-xl shadow-sm border border-slate-200 p-6 ${
+              !service.ativo ? 'opacity-60' : ''
+            }`}
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-slate-900 rounded-lg flex items-center justify-center">
+                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                  service.ativo ? 'bg-slate-900' : 'bg-slate-300'
+                }`}>
                   <Scissors className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-slate-900">{service.nome_servico}</h3>
+                  <h3 className={`font-semibold ${service.ativo ? 'text-slate-900' : 'text-slate-500'}`}>
+                    {service.nome_servico}
+                  </h3>
                   <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">
                     <Clock className="w-4 h-4" />
                     {service.duracao_media_minutos} min
@@ -131,7 +138,7 @@ export default function ServiceManagement() {
             </div>
 
             <div className="mb-4">
-              <p className="text-2xl font-bold text-slate-900">
+              <p className={`text-2xl font-bold ${service.ativo ? 'text-slate-900' : 'text-slate-500'}`}>
                 R$ {service.preco.toFixed(2)}
               </p>
             </div>
