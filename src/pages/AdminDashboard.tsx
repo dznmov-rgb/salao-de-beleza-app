@@ -15,7 +15,7 @@ import ServiceManagement from '../components/admin/ServiceManagement';
 import ScheduleView from '../components/admin/ScheduleView';
 import Clientes from './Clientes';
 import FinancialReports from '../components/admin/FinancialReports';
-import QRCodeGenerator from '../components/admin/QRCodeGenerator';
+import QRCodeGenerator from '../components/QRCodeGenerator'; // Importa o componente correto
 
 const menuItems = [
   { name: 'Dashboard', icon: LayoutDashboard },
@@ -39,7 +39,7 @@ export default function AdminDashboard() {
             <h2 className="text-3xl font-bold text-slate-900 mb-8">Dashboard</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4">Bem-vindo, {profile?.nome}</h3>
+                <h3 className="text-lg font-semibold text-slate-900 mb-4">Bem-vindo, {profile?.full_name}</h3>
                 <p className="text-slate-600">Sistema de gestão para salão de beleza</p>
               </div>
             </div>
@@ -56,7 +56,29 @@ export default function AdminDashboard() {
       case 'Relatórios':
         return <FinancialReports />;
       case 'QR Code':
-        return <QRCodeGenerator />;
+        const quickAppointmentUrl = `${window.location.origin}/quick-appointment`;
+        return (
+          <div className="max-w-2xl mx-auto">
+            <div className="flex justify-between items-center mb-8">
+              <h2 className="text-3xl font-bold text-slate-900">Gerador de QR Code</h2>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-24 h-24 bg-slate-100 rounded-2xl mb-6">
+                  <QrCode className="w-16 h-16 text-slate-900" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-2">
+                  QR Code de Agendamento Rápido
+                </h3>
+                <p className="text-slate-600">
+                  Imprima este QR Code e posicione no balcão do salão para que clientes possam agendar
+                  diretamente
+                </p>
+              </div>
+              <QRCodeGenerator url={quickAppointmentUrl} />
+            </div>
+          </div>
+        );
       default:
         return null;
     }
