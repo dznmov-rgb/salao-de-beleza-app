@@ -6,7 +6,6 @@
 - **TypeScript** - Static type checking for JavaScript development
 - **Supabase** - Backend-as-a-Service for authentication, database, and real-time features
 - **Tailwind CSS** - Utility-first CSS framework for styling
-- **React Router** - Client-side routing for single-page application navigation
 - **FullCalendar** - Calendar component for scheduling and agenda views
 - **Lucide React** - Icon library for consistent UI icons
 - **QRCode.react** - QR code generation component
@@ -49,7 +48,7 @@
 - **Use React Context** for global state (like authentication)
 - **Use local state** (useState) for component-specific state
 - **Avoid prop drilling** - use context or lift state up when necessary
-- **Keep state as close to where it's used as possible**
+- **Keep state as close to where it's used as possible
 
 ### Calendar & Scheduling
 - **Always use FullCalendar** for all calendar/agenda views
