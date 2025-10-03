@@ -5,7 +5,7 @@ import { Plus, CreditCard as Edit2, X, Scissors, Clock } from 'lucide-react';
 export default function ServiceManagement() {
   const [services, setServices] = useState<Servico[]>([]);
   const [showModal, setShowModal] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null); // Corrigido: de string | null para number | null
   const [formData, setFormData] = useState({
     nome_servico: '',
     preco: 0,
@@ -71,7 +71,7 @@ export default function ServiceManagement() {
     setShowModal(true);
   };
 
-  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+  const handleToggleStatus = async (id: number, currentStatus: boolean) => { // Corrigido: id de string para number
     try {
       const newStatus = !currentStatus;
       console.log('Trocando status do serviço', id, 'de', currentStatus, 'para', newStatus);

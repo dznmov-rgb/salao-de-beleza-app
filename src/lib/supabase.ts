@@ -18,7 +18,7 @@ export type Profile = {
 };
 
 export type Servico = {
-  id: string;
+  id: number; // Corrigido para number
   nome_servico: string;
   preco: number;
   duracao_media_minutos: number;
@@ -34,14 +34,14 @@ export type Cliente = { // Adicionado o tipo Cliente
 };
 
 export type Agendamento = {
-  id: string;
+  id: number; // Corrigido para number
   cliente_nome: string;
   cliente_telefone: string;
-  id_profissional: string;
-  id_servico: string;
+  id_profissional: string | null; // Pode ser null se 'any' for selecionado
+  id_servico: number; // Corrigido para number
   data_hora_inicio: string;
   data_hora_fim: string;
-  status: 'agendado' | 'executado' | 'nao_compareceu';
+  status: 'agendado' | 'executado' | 'nao_compareceu' | 'concluido' | 'cancelado'; // Adicionado 'concluido' e 'cancelado'
   created_at: string;
 };
 
