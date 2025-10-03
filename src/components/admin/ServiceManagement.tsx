@@ -74,30 +74,17 @@ export default function ServiceManagement() {
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     try {
       const newStatus = !currentStatus;
-      console.log('Tentando atualizar status do serviço:', {
-        id,
-        currentStatus,
-        newStatus,
-        timestamp: new Date().toISOString()
-      });
+      console.log('Trocando status do serviço', id, 'de', currentStatus, 'para', newStatus);
       
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('servicos')
         .update({ ativo: newStatus })
         .eq('id', id);
       
       if (error) {
-        console.error('Erro detalhado ao atualizar status:', {
-          error,
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        });
+        console.error('Erro ao atualizar status:', error);
         throw error;
       }
-      
-      console.log('Atualização bem-sucedida:', data);
       
       // Atualiza localmente para feedback imediato
       setServices(prevServices => 
@@ -108,9 +95,10 @@ export default function ServiceManagement() {
         )
       );
       
-    } catch (error: any) {
+      console.log('Status atualizado com sucesso!');
+    } catch (error) {
       console.error('Erro ao alternar status do serviço:', error);
-      alert(`Erro ao atualizar status do serviço: ${error.message || 'Tente novamente.'}`);
+      alert('Erro ao atualizar status do serviço. Tente novamente.');
     }
   };
 
