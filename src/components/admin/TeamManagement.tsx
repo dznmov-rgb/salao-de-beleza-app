@@ -7,7 +7,7 @@ export default function TeamManagement() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    nome: '',
+    full_name: '', // Alterado de 'nome' para 'full_name'
     email: '',
     telefone: '',
     commission_percentage: 0,
@@ -23,7 +23,7 @@ export default function TeamManagement() {
       .from('profiles')
       .select('*')
       .eq('role', 'professional')
-      .order('nome');
+      .order('full_name'); // Ordenar por full_name
     if (data) setProfessionals(data);
   };
 
@@ -34,7 +34,7 @@ export default function TeamManagement() {
       await supabase
         .from('profiles')
         .update({
-          nome: formData.nome,
+          full_name: formData.full_name, // Alterado de 'nome' para 'full_name'
           telefone: formData.telefone,
           commission_percentage: formData.commission_percentage
         })
@@ -45,7 +45,7 @@ export default function TeamManagement() {
         password: formData.password,
         options: {
           data: {
-            full_name: formData.nome // Usar full_name para o trigger
+            full_name: formData.full_name // Usar full_name para o trigger
           }
         }
       });
@@ -53,12 +53,12 @@ export default function TeamManagement() {
       if (authData.user && !authError) {
         await supabase.from('profiles').insert({
           id: authData.user.id,
-          full_name: formData.nome, // Usar full_name
+          full_name: formData.full_name, // Usar full_name
           email: formData.email,
           telefone: formData.telefone,
           role: 'professional',
           commission_percentage: formData.commission_percentage,
-          is_working: true // Corrigido para 'is_working'
+          is_working: true
         });
       }
     }
@@ -70,7 +70,7 @@ export default function TeamManagement() {
   const handleEdit = (professional: Profile) => {
     setEditingId(professional.id);
     setFormData({
-      nome: professional.full_name, // Usar full_name
+      full_name: professional.full_name, // Usar full_name
       email: professional.email,
       telefone: professional.telefone || '',
       commission_percentage: professional.commission_percentage,
@@ -82,14 +82,14 @@ export default function TeamManagement() {
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     await supabase
       .from('profiles')
-      .update({ is_working: !currentStatus }) // Corrigido para 'is_working'
+      .update({ is_working: !currentStatus })
       .eq('id', id);
     loadProfessionals();
   };
 
   const resetForm = () => {
     setFormData({
-      nome: '',
+      full_name: '', // Alterado de 'nome' para 'full_name'
       email: '',
       telefone: '',
       commission_percentage: 0,
@@ -191,8 +191,8 @@ export default function TeamManagement() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">Nome</label>
                 <input
                   type="text"
-                  value={formData.nome}
-                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                  value={formData.full_name} // Alterado de 'nome' para 'full_name'
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} // Alterado de 'nome' para 'full_name'
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm"
                   required
                 />

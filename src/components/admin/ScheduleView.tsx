@@ -19,10 +19,10 @@ export default function ScheduleView() {
   const loadProfessionals = async () => {
     const { data } = await supabase
       .from('profiles')
-      .select('id, nome')
+      .select('id, full_name') // Corrigido: nome para full_name
       .eq('role', 'professional')
-      .eq('ativo', true)
-      .order('nome');
+      .eq('is_working', true)
+      .order('full_name'); // Corrigido: nome para full_name
     if (data) setProfessionals(data);
   };
 
@@ -34,9 +34,9 @@ export default function ScheduleView() {
         servico:servicos(*),
         profissional:profiles(*)
       `)
-      .gte('data_hora', `${selectedDate}T00:00:00`)
-      .lte('data_hora', `${selectedDate}T23:59:59`)
-      .order('data_hora');
+      .gte('data_hora_inicio', `${selectedDate}T00:00:00`)
+      .lte('data_hora_inicio', `${selectedDate}T23:59:59`)
+      .order('data_hora_inicio');
 
     if (selectedProfessional !== 'all') {
       query = query.eq('id_profissional', selectedProfessional);
@@ -100,7 +100,7 @@ export default function ScheduleView() {
               <option value="all">Todos</option>
               {professionals.map((prof) => (
                 <option key={prof.id} value={prof.id}>
-                  {prof.nome}
+                  {prof.full_name} {/* Corrigido: prof.nome para prof.full_name */}
                 </option>
               ))}
             </select>
@@ -127,13 +127,13 @@ export default function ScheduleView() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900">
-                      {new Date(appointment.data_hora).toLocaleTimeString('pt-BR', {
+                      {new Date(appointment.data_hora_inicio).toLocaleTimeString('pt-BR', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
                     </h3>
                     <p className="text-sm text-slate-600 mt-1">
-                      {new Date(appointment.data_hora).toLocaleDateString('pt-BR', {
+                      {new Date(appointment.data_hora_inicio).toLocaleDateString('pt-BR', {
                         day: 'numeric',
                         month: 'short'
                       })}
@@ -164,7 +164,7 @@ export default function ScheduleView() {
 
                 <div className="flex items-center gap-2">
                   <User className="w-4 h-4 text-slate-500" />
-                  <span className="text-sm text-slate-900">Prof: {appointment.profissional.nome}</span>
+                  <span className="text-sm text-slate-900">Prof: {appointment.profissional.full_name}</span> {/* Corrigido: appointment.profissional.nome para appointment.profissional.full_name */}
                 </div>
               </div>
             </div>

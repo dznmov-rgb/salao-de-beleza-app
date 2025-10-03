@@ -15,7 +15,7 @@ export default function EditProfessionalModal({ profile, onClose, onSuccess }: P
 
   useEffect(() => {
     if (profile) {
-      setName(profile.nome || '');
+      setName(profile.full_name || ''); // Alterado de 'nome' para 'full_name'
     }
   }, [profile]);
 
@@ -27,7 +27,7 @@ export default function EditProfessionalModal({ profile, onClose, onSuccess }: P
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ nome: name })
+        .update({ full_name: name }) // Alterado de 'nome' para 'full_name'
         .eq('id', profile.id);
 
       if (error) throw error;

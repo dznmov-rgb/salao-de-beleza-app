@@ -26,7 +26,7 @@ export default function ProfessionalDashboard() {
   // Status de trabalho inicial
   const [isWorking, setIsWorking] = useState(profile?.is_working || false);
 
-  const firstName = profile?.nome ? profile.nome.split(' ')[0] : 'Profissional';
+  const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Profissional'; // Alterado de 'nome' para 'full_name'
   const displayDate = currentDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' });
 
   // FUNÇÃO PARA ATUALIZAR O STATUS DE TRABALHO
@@ -104,7 +104,7 @@ export default function ProfessionalDashboard() {
             title: `${appt.cliente_nome} - ${appt.servicos?.[0]?.nome_servico || ''}`, // Access first element of array
             start: new Date(appt.data_hora_inicio),
             extendedProps: { 
-                professional: profile?.nome || 'N/A', 
+                professional: profile?.full_name || 'N/A', // Alterado de 'nome' para 'full_name'
                 cliente_nome: appt.cliente_nome, 
                 servico_nome: appt.servicos?.[0]?.nome_servico || '', // Access first element of array
                 status: appt.status

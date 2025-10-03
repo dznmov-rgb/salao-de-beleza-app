@@ -223,7 +223,7 @@ export default function QuickAppointment() {
               <button onClick={() => { setSelectedProfessional('any'); handleNextStep(); }} className="w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition bg-blue-50 font-semibold text-gray-900">Sem Preferência</button>
               {professionals.map(pro => (
                 <button key={pro.id} onClick={() => { setSelectedProfessional(pro); handleNextStep(); }} className="w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition">
-                  <span className="font-semibold text-gray-700">{pro.nome}</span>
+                  <span className="font-semibold text-gray-700">{pro.full_name}</span> {/* Corrigido: pro.nome para pro.full_name */}
                 </button>
               ))}
             </div>
@@ -269,7 +269,7 @@ export default function QuickAppointment() {
             <div className="p-4 border border-gray-300 rounded-lg bg-gray-50 space-y-2 text-gray-700">
               <p><strong>Nome:</strong> {clientName}</p>
               <p><strong>Serviço:</strong> {selectedService?.nome_servico}</p>
-              <p><strong>Profissional:</strong> {selectedProfessional === 'any' ? 'Qualquer um' : selectedProfessional?.nome}</p>
+              <p><strong>Profissional:</strong> {selectedProfessional === 'any' ? 'Qualquer um' : selectedProfessional?.full_name}</p> {/* Corrigido: selectedProfessional?.nome para selectedProfessional?.full_name */}
               <p><strong>Data e Hora:</strong> {selectedDateTime?.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) || 'A definir'}</p>
             </div>
             <button onClick={handleConfirmAppointment} disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Confirmar Agendamento</button>
