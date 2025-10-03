@@ -26,14 +26,21 @@ export type Servico = {
   created_at: string;
 };
 
+export type Cliente = { // Adicionado o tipo Cliente
+  id: number;
+  nome_completo: string;
+  telefone: string;
+  created_at: string;
+};
+
 export type Agendamento = {
   id: string;
   cliente_nome: string;
   cliente_telefone: string;
   id_profissional: string;
   id_servico: string;
-  data_hora_inicio: string; // Corrigido: adicionado data_hora_inicio
-  data_hora_fim: string;     // Corrigido: adicionado data_hora_fim
+  data_hora_inicio: string;
+  data_hora_fim: string;
   status: 'agendado' | 'executado' | 'nao_compareceu';
   created_at: string;
 };
