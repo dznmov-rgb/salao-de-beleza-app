@@ -17,30 +17,48 @@ export default function ServiceManagement() {
   }, []);
 
   const loadServices = async () => {
-    const { data } = await supabase
-      .from('servicos')
-      .select('*')
-      .order('nome_servico');
-    if (data) setServices(data);
+    try {
+      const { data, error } = await supabase
+        .from('servicos')
+        .select('*')
+        .order('nome_servico');
+      
+      if (error) {
+        console.error('Erro ao carregar serviços:', error);
+        return;
+      }
+      
+      setServices(data || []);
+    } catch (error) {
+      console.error('Erro ao carregar serviços:', error);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (editingId) {
-      await supabase
-        .from('servicos')
-        .update(formData)
-        .eq('id', editingId);
-    } else {
-      await supabase.from('servicos').insert({
-        ...formData,
-        ativo: true
-      });
-    }
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from('servicos')
+          .update(formData)
+          .eq('id', editingId);
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('servicos').insert({
+          ...formData,
+          ativo: true
+        });
+        
+        if (error) throw error;
+      }
 
-    resetForm();
-    loadServices();
+      resetForm();
+      loadServices();
+    } catch (error) {
+      console.error('Erro ao salvar serviço:', error);
+    }
   };
 
   const handleEdit = (service: Servico) => {
@@ -54,11 +72,18 @@ export default function ServiceManagement() {
   };
 
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
-    await supabase
-      .from('servicos')
-      .update({ ativo: !currentStatus })
-      .eq('id', id);
-    loadServices();
+    try {
+      const { error } = await supabase
+        .from('servicos')
+        .update({ ativo: !currentStatus })
+        .eq('id', id);
+      
+      if (error) throw error;
+      
+      loadServices();
+    } catch (error) {
+      console.error('Erro ao alternar status do serviço:', error);
+    }
   };
 
   const resetForm = () => {
