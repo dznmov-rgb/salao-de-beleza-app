@@ -1,5 +1,3 @@
-// src/components/ProfessionalAgenda.tsx
-
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -25,8 +23,7 @@ export default function ProfessionalAgenda() {
       // **A CHAVE É ESTE FILTRO:** Puxa apenas agendamentos onde o id_profissional é o ID do usuário logado
       const { data, error } = await supabase
         .from('agendamentos')
-        .select(`*, servicos(nome_servico), profiles(full_name)`)
-        .eq('id_profissional', user.id); 
+        .select(`*, servicos(nome_servico), profiles(nome)`);
 
       if (error) throw error;
       
@@ -38,7 +35,7 @@ export default function ProfessionalAgenda() {
         // Mantém a lógica de cor por status
         backgroundColor: item.status === 'concluido' ? '#16a34a' : item.status === 'cancelado' ? '#dc2626' : '#2563eb',
         borderColor: item.status === 'concluido' ? '#15803d' : item.status === 'cancelado' ? '#b91c1c' : '#1d4ed8',
-        extendedProps: { professional: item.profiles?.full_name || 'N/A' },
+        extendedProps: { professional: item.profiles?.nome || 'N/A' },
       }));
       setAppointments(formattedEvents);
 

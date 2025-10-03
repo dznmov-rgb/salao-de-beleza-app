@@ -1,10 +1,7 @@
-// src/contexts/AuthContext.tsx
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase, Profile } from '../lib/supabase';
 
-// 1. ADICIONAMOS A FUNÇÃO signUp AQUI
 type AuthContextType = {
   user: User | null;
   profile: Profile | null;
@@ -31,7 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
       (async () => {
         setUser(session?.user ?? null);
         if (session?.user) {
@@ -73,10 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  // 2. AQUI ESTÁ A LÓGICA DA NOVA FUNÇÃO DE CADASTRO
   const signUp = async (name: string, email: string, password: string) => {
-    // Lógica inteligente: o primeiro usuário cadastrado será sempre o 'admin'.
-    // Os próximos serão 'professional' por padrão.
     const { count } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
     const role = count === 0 ? 'admin' : 'professional';
 
@@ -94,7 +88,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    // 3. ADICIONAMOS A FUNÇÃO signUp PARA FICAR DISPONÍVEL NO APP
     <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, signUp }}>
       {children}
     </AuthContext.Provider>

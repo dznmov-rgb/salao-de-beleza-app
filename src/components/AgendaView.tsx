@@ -1,5 +1,3 @@
-// src/components/AgendaView.tsx
-
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
@@ -8,7 +6,7 @@ import ptBrLocale from '@fullcalendar/core/locales/pt-br';
 
 type Props = {
   events: any[];
-  onEventClick: (eventInfo: any) => void; // NOVA: Prop para lidar com o clique no evento
+  onEventClick: (eventInfo: any) => void;
 };
 
 export default function AgendaView({ events, onEventClick }: Props) {
@@ -24,7 +22,7 @@ export default function AgendaView({ events, onEventClick }: Props) {
         }}
         locale={ptBrLocale}
         events={events}
-        eventClick={onEventClick} // AQUI ESTÁ A MÁGICA: chama a função quando um evento é clicado
+        eventClick={onEventClick}
         editable={true}
         selectable={true}
         allDaySlot={false}

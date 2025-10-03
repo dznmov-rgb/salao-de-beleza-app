@@ -1,5 +1,3 @@
-// src/App.tsx (Código de Roteamento)
-
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
@@ -7,7 +5,6 @@ import QuickAppointment from './pages/QuickAppointment';
 import AdminDashboard from './pages/AdminDashboard';
 import ProfessionalDashboard from './pages/ProfessionalDashboard';
 import SignUp from './pages/SignUp';
-import Clientes from './pages/Clientes';
 
 function AppRouter() {
   const { user, profile, loading } = useAuth();

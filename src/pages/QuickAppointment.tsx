@@ -1,5 +1,3 @@
-// src/pages/QuickAppointment.tsx (VERSÃO CORRIGIDA)
-
 import { useState, useEffect } from 'react';
 import { supabase, Profile } from '../lib/supabase';
 import { ArrowLeft } from 'lucide-react';
@@ -188,7 +186,7 @@ export default function QuickAppointment() {
     switch (step) {
       case 1: // Identificação
         return (
-          <form onSubmit={handleNextStep} className="space-y-4">
+          <form onSubmit={handleIdentificationSubmit} className="space-y-4">
             <h1 className="text-2xl font-bold text-slate-800 text-center mb-6">Identificação</h1>
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1">Seu Nome Completo</label>
@@ -225,7 +223,7 @@ export default function QuickAppointment() {
               <button onClick={() => { setSelectedProfessional('any'); handleNextStep(); }} className="w-full text-left p-4 border rounded-lg hover:bg-slate-50 hover:border-slate-900 transition bg-slate-50 font-semibold text-slate-900">Sem Preferência</button>
               {professionals.map(pro => (
                 <button key={pro.id} onClick={() => { setSelectedProfessional(pro); handleNextStep(); }} className="w-full text-left p-4 border rounded-lg hover:bg-slate-50 hover:border-slate-900 transition">
-                  <span className="font-semibold text-slate-700">{pro.full_name}</span>
+                  <span className="font-semibold text-slate-700">{pro.nome}</span>
                 </button>
               ))}
             </div>
@@ -271,7 +269,7 @@ export default function QuickAppointment() {
             <div className="p-4 border rounded-lg bg-slate-50 space-y-2 text-slate-700">
               <p><strong>Nome:</strong> {clientName}</p>
               <p><strong>Serviço:</strong> {selectedService?.nome_servico}</p>
-              <p><strong>Profissional:</strong> {selectedProfessional === 'any' ? 'Qualquer um' : selectedProfessional?.full_name}</p>
+              <p><strong>Profissional:</strong> {selectedProfessional === 'any' ? 'Qualquer um' : selectedProfessional?.nome}</p>
               <p><strong>Data e Hora:</strong> {selectedDateTime?.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) || 'A definir'}</p>
             </div>
             <button onClick={handleConfirmAppointment} disabled={loading} className="w-full bg-slate-900 text-white py-3 rounded-lg font-medium hover:bg-slate-800">Confirmar Agendamento</button>

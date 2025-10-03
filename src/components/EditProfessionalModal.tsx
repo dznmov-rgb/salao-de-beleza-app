@@ -1,5 +1,3 @@
-// src/components/EditProfessionalModal.tsx
-
 import { useState, useEffect } from 'react';
 import { supabase, Profile } from '../lib/supabase';
 import { X } from 'lucide-react';
@@ -17,7 +15,7 @@ export default function EditProfessionalModal({ profile, onClose, onSuccess }: P
 
   useEffect(() => {
     if (profile) {
-      setName(profile.full_name || '');
+      setName(profile.nome || '');
     }
   }, [profile]);
 
@@ -29,7 +27,7 @@ export default function EditProfessionalModal({ profile, onClose, onSuccess }: P
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: name })
+        .update({ nome: name })
         .eq('id', profile.id);
 
       if (error) throw error;

@@ -14,6 +14,8 @@ export type Profile = {
   commission_percentage: number;
   foto_url: string | null;
   ativo: boolean;
+  full_name: string;
+  is_working: boolean;
   created_at: string;
 };
 

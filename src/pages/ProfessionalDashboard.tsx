@@ -1,5 +1,3 @@
-// src/pages/ProfessionalDashboard.tsx (CÓDIGO FINAL DE RECUPERAÇÃO)
-
 import { useState, useEffect } from 'react';
 import { LogOut, Scissors, Phone, ArrowRight, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -28,7 +26,7 @@ export default function ProfessionalDashboard() {
   // Status de trabalho inicial
   const [isWorking, setIsWorking] = useState(profile?.is_working || false);
 
-  const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Profissional';
+  const firstName = profile?.nome ? profile.nome.split(' ')[0] : 'Profissional';
   const displayDate = currentDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' });
 
   // FUNÇÃO PARA ATUALIZAR O STATUS DE TRABALHO
@@ -106,7 +104,7 @@ export default function ProfessionalDashboard() {
             title: `${appt.cliente_nome} - ${appt.servicos.nome_servico}`,
             start: new Date(appt.data_hora_inicio),
             extendedProps: { 
-                professional: profile?.full_name || 'N/A', 
+                professional: profile?.nome || 'N/A', 
                 cliente_nome: appt.cliente_nome, 
                 servico_nome: appt.servicos.nome_servico,
                 status: appt.status
@@ -228,6 +226,7 @@ export default function ProfessionalDashboard() {
             <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center space-x-2">
                 <span>Próximos Agendamentos Futuros ({futureAppointments.length})</span>
             </h3>
+           
             <div className="space-y-3">
                 {futureAppointments.map(appt => (
                     <div key={appt.id} className="bg-white p-4 rounded-lg shadow-sm border border-slate-200 flex justify-between items-center text-slate-700">
