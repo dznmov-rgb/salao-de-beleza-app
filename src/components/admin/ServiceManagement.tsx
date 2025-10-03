@@ -73,9 +73,10 @@ export default function ServiceManagement() {
 
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     try {
+      const newStatus = !currentStatus;
       const { error } = await supabase
         .from('servicos')
-        .update({ ativo: !currentStatus })
+        .update({ ativo: newStatus })
         .eq('id', id);
       
       if (error) throw error;
