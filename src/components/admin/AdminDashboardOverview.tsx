@@ -24,7 +24,7 @@ export default function AdminDashboardOverview() {
           .from('profiles')
           .select('*', { count: 'exact', head: true })
           .eq('role', 'professional')
-          .eq('ativo', true);
+          .eq('is_working', true); // Corrigido para 'is_working'
         if (profError) throw profError;
 
         // Total de Serviços Ativos

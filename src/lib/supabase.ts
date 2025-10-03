@@ -13,9 +13,8 @@ export type Profile = {
   role: 'admin' | 'professional';
   commission_percentage: number;
   foto_url: string | null;
-  ativo: boolean;
+  is_working: boolean; // Alterado de 'ativo' para 'is_working'
   full_name: string;
-  is_working: boolean;
   created_at: string;
 };
 

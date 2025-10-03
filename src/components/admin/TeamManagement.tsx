@@ -45,7 +45,7 @@ export default function TeamManagement() {
         password: formData.password,
         options: {
           data: {
-            nome: formData.nome
+            full_name: formData.nome // Usar full_name para o trigger
           }
         }
       });
@@ -53,12 +53,12 @@ export default function TeamManagement() {
       if (authData.user && !authError) {
         await supabase.from('profiles').insert({
           id: authData.user.id,
-          nome: formData.nome,
+          full_name: formData.nome, // Usar full_name
           email: formData.email,
           telefone: formData.telefone,
           role: 'professional',
           commission_percentage: formData.commission_percentage,
-          ativo: true
+          is_working: true // Corrigido para 'is_working'
         });
       }
     }
@@ -70,7 +70,7 @@ export default function TeamManagement() {
   const handleEdit = (professional: Profile) => {
     setEditingId(professional.id);
     setFormData({
-      nome: professional.nome,
+      nome: professional.full_name, // Usar full_name
       email: professional.email,
       telefone: professional.telefone || '',
       commission_percentage: professional.commission_percentage,
@@ -82,7 +82,7 @@ export default function TeamManagement() {
   const handleToggleStatus = async (id: string, currentStatus: boolean) => {
     await supabase
       .from('profiles')
-      .update({ ativo: !currentStatus })
+      .update({ is_working: !currentStatus }) // Corrigido para 'is_working'
       .eq('id', id);
     loadProfessionals();
   };
@@ -121,15 +121,15 @@ export default function TeamManagement() {
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                  professional.ativo ? 'bg-slate-900' : 'bg-slate-300'
+                  professional.is_working ? 'bg-slate-900' : 'bg-slate-300'
                 }`}>
-                  <User className={`w-6 h-6 ${professional.ativo ? 'text-white' : 'text-slate-500'}`} />
+                  <User className={`w-6 h-6 ${professional.is_working ? 'text-white' : 'text-slate-500'}`} />
                 </div>
                 <div>
-                  <h3 className={`font-semibold ${professional.ativo ? 'text-slate-900' : 'text-slate-500'}`}>
-                    {professional.nome}
+                  <h3 className={`font-semibold ${professional.is_working ? 'text-slate-900' : 'text-slate-500'}`}>
+                    {professional.full_name}
                   </h3>
-                  <p className={`text-sm ${professional.ativo ? 'text-slate-600' : 'text-slate-400'} mt-1`}>
+                  <p className={`text-sm ${professional.is_working ? 'text-slate-600' : 'text-slate-400'} mt-1`}>
                     {professional.email}
                   </p>
                 </div>
@@ -138,15 +138,15 @@ export default function TeamManagement() {
 
             {professional.telefone && (
               <div className="mb-4">
-                <p className={`text-sm ${professional.ativo ? 'text-slate-600' : 'text-slate-400'}`}>
+                <p className={`text-sm ${professional.is_working ? 'text-slate-600' : 'text-slate-400'}`}>
                   Tel: {professional.telefone}
                 </p>
               </div>
             )}
 
             <div className="mb-4">
-              <p className={`text-sm ${professional.ativo ? 'text-slate-600' : 'text-slate-400'}`}>Comissão</p>
-              <p className={`text-2xl font-bold ${professional.ativo ? 'text-slate-900' : 'text-slate-500'}`}>
+              <p className={`text-sm ${professional.is_working ? 'text-slate-600' : 'text-slate-400'}`}>Comissão</p>
+              <p className={`text-2xl font-bold ${professional.is_working ? 'text-slate-900' : 'text-slate-500'}`}>
                 {professional.commission_percentage}%
               </p>
             </div>
@@ -160,14 +160,14 @@ export default function TeamManagement() {
                 Editar
               </button>
               <button
-                onClick={() => handleToggleStatus(professional.id, professional.ativo)}
+                onClick={() => handleToggleStatus(professional.id, professional.is_working)}
                 className={`flex-1 px-3 py-2 rounded-lg transition ${
-                  professional.ativo
+                  professional.is_working
                     ? 'bg-red-100 text-red-700 hover:bg-red-200'
                     : 'bg-green-100 text-green-700 hover:bg-green-200'
                 }`}
               >
-                {professional.ativo ? 'Inativar' : 'Ativar'}
+                {professional.is_working ? 'Inativar' : 'Ativar'}
               </button>
             </div>
           </div>
