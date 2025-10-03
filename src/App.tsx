@@ -1,4 +1,4 @@
-// src/App.tsx
+// src/App.tsx (Código de Roteamento)
 
 import { useEffect, useState } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -6,7 +6,8 @@ import Login from './pages/Login';
 import QuickAppointment from './pages/QuickAppointment';
 import AdminDashboard from './pages/AdminDashboard';
 import ProfessionalDashboard from './pages/ProfessionalDashboard';
-import SignUp from './pages/SignUp'; // <-- 1. IMPORTAMOS A NOVA PÁGINA
+import SignUp from './pages/SignUp';
+import Clientes from './pages/Clientes';
 
 function AppRouter() {
   const { user, profile, loading } = useAuth();
@@ -32,19 +33,21 @@ function AppRouter() {
     );
   }
 
+  // ROTAS PÚBLICAS
   if (currentPath === '/quick-appointment') {
     return <QuickAppointment />;
   }
-
-  // <-- 2. ADICIONAMOS A LÓGICA DA NOVA ROTA AQUI
+  
   if (currentPath === '/cadastro') {
     return <SignUp />;
   }
 
+  // SE NÃO ESTIVER LOGADO, VAI PARA O LOGIN
   if (!user || !profile) {
     return <Login />;
   }
-
+  
+  // ROTAS PRIVADAS (PAINÉIS)
   if (profile.role === 'admin') {
     return <AdminDashboard />;
   }
@@ -53,6 +56,7 @@ function AppRouter() {
     return <ProfessionalDashboard />;
   }
 
+  // CASO DE FALHA, VAI PARA O LOGIN
   return <Login />;
 }
 
