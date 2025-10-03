@@ -115,23 +115,21 @@ export default function ServiceManagement() {
         {services.map((service) => (
           <div
             key={service.id}
-            className={`bg-white rounded-xl shadow-sm border border-slate-200 p-6 ${
-              !service.ativo ? 'opacity-60' : ''
-            }`}
+            className="bg-white rounded-xl shadow-sm border border-slate-200 p-6"
           >
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-center gap-3">
                 <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
                   service.ativo ? 'bg-slate-900' : 'bg-slate-300'
                 }`}>
-                  <Scissors className="w-6 h-6 text-white" />
+                  <Scissors className={`w-6 h-6 ${service.ativo ? 'text-white' : 'text-slate-500'}`} />
                 </div>
                 <div>
                   <h3 className={`font-semibold ${service.ativo ? 'text-slate-900' : 'text-slate-500'}`}>
                     {service.nome_servico}
                   </h3>
-                  <p className="text-sm text-slate-600 flex items-center gap-1 mt-1">
-                    <Clock className="w-4 h-4" />
+                  <p className={`text-sm ${service.ativo ? 'text-slate-600' : 'text-slate-400'} flex items-center gap-1 mt-1`}>
+                    <Clock className={`w-4 h-4 ${service.ativo ? 'text-slate-500' : 'text-slate-400'}`} />
                     {service.duracao_media_minutos} min
                   </p>
                 </div>
