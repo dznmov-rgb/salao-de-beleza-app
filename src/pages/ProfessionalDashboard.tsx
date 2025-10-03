@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Scissors, Phone, ArrowRight, ToggleLeft, ToggleRight } from 'lucide-react';
+import { LogOut, Scissors, Phone, ArrowRight, ToggleLeft, ToggleRight, CalendarDays } from 'lucide-react'; // Adicionado CalendarDays
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import AppointmentDetailsModal from '../components/AppointmentDetailsModal';
@@ -26,7 +26,7 @@ export default function ProfessionalDashboard() {
   // Status de trabalho inicial
   const [isWorking, setIsWorking] = useState(profile?.is_working || false);
 
-  const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Profissional'; // Alterado de 'nome' para 'full_name'
+  const firstName = profile?.full_name ? profile.full_name.split(' ')[0] : 'Profissional';
   const displayDate = currentDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'short' });
 
   // FUNÇÃO PARA ATUALIZAR O STATUS DE TRABALHO
@@ -104,7 +104,7 @@ export default function ProfessionalDashboard() {
             title: `${appt.cliente_nome} - ${appt.servicos?.[0]?.nome_servico || ''}`, // Access first element of array
             start: new Date(appt.data_hora_inicio),
             extendedProps: { 
-                professional: profile?.full_name || 'N/A', // Alterado de 'nome' para 'full_name'
+                professional: profile?.full_name || 'N/A',
                 cliente_nome: appt.cliente_nome, 
                 servico_nome: appt.servicos?.[0]?.nome_servico || '', // Access first element of array
                 status: appt.status
@@ -224,6 +224,7 @@ export default function ProfessionalDashboard() {
         {futureAppointments.length > 0 && (
           <div className="mt-8 pt-6 border-t border-gray-300">
             <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
+                <CalendarDays size={20} className="text-gray-600" />
                 <span>Próximos Agendamentos Futuros ({futureAppointments.length})</span>
             </h3>
            
