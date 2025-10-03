@@ -9,7 +9,7 @@ type Appointment = {
   data_hora_inicio: string;
   cliente_nome: string;
   cliente_telefone: string;
-  servicos: { nome_servico: string };
+  servicos: { nome_servico: string }[] | null; // Changed to allow array of services
   status: string;
 };
 
@@ -69,21 +69,21 @@ export default function ProfessionalDashboard() {
         .lte('data_hora_inicio', targetDayEnd.toISOString())
         .order('data_hora_inicio', { ascending: true });
       
-      setAppointmentsToday(todayData as unknown as Appointment[]);
+      setAppointmentsToday(todayData || []); // Ensure it's an array
 
       // 2. BUSCA AGENDAMENTOS FUTUROS (A PARTIR DE AMANHÃ)
       const { data: futureData } = await supabase
         .from('agendamentos')
-        .select(`id, data_hora_inicio, cliente_nome, status, servicos(nome_servico)`)
+        .select(`id, data_hora_inicio, cliente_nome, cliente_telefone, status, servicos(nome_servico)`) // Added cliente_telefone
         .eq('id_profissional', user.id)
         .eq('status', 'agendado')
         .gte('data_hora_inicio', tomorrowStart.toISOString())
         .order('data_hora_inicio', { ascending: true });
       
-      setFutureAppointments(futureData as unknown as Appointment[]);
+      setFutureAppointments(futureData || []); // Ensure it's an array
 
     } catch (error) {
-      console.error("Erro ao buscar agenda do profissional:", error);
+      console.error("Erro ao buscar agenda:", error);
     } finally {
       setLoading(false);
     }
@@ -101,12 +101,12 @@ export default function ProfessionalDashboard() {
     setSelectedEventInfo({
         event: {
             id: appt.id,
-            title: `${appt.cliente_nome} - ${appt.servicos.nome_servico}`,
+            title: `${appt.cliente_nome} - ${appt.servicos?.[0]?.nome_servico || ''}`, // Access first element of array
             start: new Date(appt.data_hora_inicio),
             extendedProps: { 
                 professional: profile?.nome || 'N/A', 
                 cliente_nome: appt.cliente_nome, 
-                servico_nome: appt.servicos.nome_servico,
+                servico_nome: appt.servicos?.[0]?.nome_servico || '', // Access first element of array
                 status: appt.status
             }
         }
@@ -204,7 +204,7 @@ export default function ProfessionalDashboard() {
                     <div>
                         <p className="font-extrabold text-lg text-gray-900">{appt.cliente_nome}</p>
                         <div className="text-sm text-gray-600 space-y-0.5 mt-1">
-                            <div className="flex items-center space-x-1"><Scissors size={14} className="flex-shrink-0" /><span>{appt.servicos.nome_servico}</span></div>
+                            <div className="flex items-center space-x-1"><Scissors size={14} className="flex-shrink-0" /><span>{appt.servicos?.[0]?.nome_servico || ''}</span></div>
                             <div className="flex items-center space-x-1"><Phone size={14} className="flex-shrink-0" /><span>{appt.cliente_telefone}</span></div>
                         </div>
                     </div>
@@ -233,7 +233,7 @@ export default function ProfessionalDashboard() {
                         <div className="flex items-center space-x-3">
                             <ArrowRight size={16} className="text-green-500" />
                             <div>
-                                <p className="font-medium">{appt.cliente_nome} ({appt.servicos.nome_servico})</p>
+                                <p className="font-medium">{appt.cliente_nome} ({appt.servicos?.[0]?.nome_servico || ''})</p>
                                 <p className="text-xs text-gray-500">
                                     {new Date(appt.data_hora_inicio).toLocaleDateString('pt-BR', { dateStyle: 'short' })} às 
                                     {new Date(appt.data_hora_inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
