@@ -42,14 +42,9 @@ export default function FinancialReports() {
     });
 
     try {
-      // Convert local startDate and endDate to UTC timestamps for the Supabase query
-      const localStartDateObj = new Date(startDate); // e.g., '2025-10-01' -> 2025-10-01 00:00:00 local
-      localStartDateObj.setHours(0, 0, 0, 0); // Ensure start of day in local timezone
-      const queryStartDateUTC = localStartDateObj.toISOString(); // Convert to UTC ISO string
-
-      const localEndDateObj = new Date(endDate); // e.g., '2025-10-04' -> 2025-10-04 00:00:00 local
-      localEndDateObj.setHours(23, 59, 59, 999); // Ensure end of day in local timezone
-      const queryEndDateUTC = localEndDateObj.toISOString(); // Convert to UTC ISO string
+      // Define os limites da consulta ao Supabase usando o início e fim do dia UTC
+      const queryStartDateUTC = `${startDate}T00:00:00.000Z`;
+      const queryEndDateUTC = `${endDate}T23:59:59.999Z`;
 
       const { data: appointments, error } = await supabase
         .from('agendamentos')
@@ -77,39 +72,33 @@ export default function FinancialReports() {
       if (appointments) {
         const typedAppointments: AppointmentWithServicePrice[] = appointments as unknown as AppointmentWithServicePrice[];
 
-        // --- Calcular os limites de data local e converter para timestamps UTC para comparação ---
-        // Parse endDate components explicitly to avoid timezone ambiguity with new Date(string)
-        const endDateParts = endDate.split('-').map(Number); // [year, month, day]
-        const endYear = endDateParts[0];
-        const endMonth = endDateParts[1] - 1; // Month is 0-indexed
-        const endDay = endDateParts[2];
+        // --- Definir limites de data puramente em UTC para os cálculos internos ---
+        // Para Receita Diária: baseada na data de fim selecionada (dia UTC)
+        const dailyUTCStart = new Date(endDate + 'T00:00:00.000Z').getTime();
+        const dailyUTCEnd = new Date(endDate + 'T23:59:59.999Z').getTime();
 
-        // Daily boundaries (local day, converted to UTC timestamps)
-        const dailyStartLocal = new Date(endYear, endMonth, endDay, 0, 0, 0, 0);
-        const dailyEndLocal = new Date(endYear, endMonth, endDay, 23, 59, 59, 999);
-        const dailyStartTimestamp = dailyStartLocal.getTime();
-        const dailyEndTimestamp = dailyEndLocal.getTime();
+        // Para Receita Semanal: baseada na semana da data de fim selecionada (semana UTC)
+        const getUTCWeekStart = (dateString: string) => {
+          const d = new Date(dateString + 'T00:00:00.000Z'); // Início do dia em UTC
+          const dayOfWeek = d.getUTCDay(); // 0 para Domingo, 6 para Sábado (dia da semana UTC)
+          d.setUTCDate(d.getUTCDate() - dayOfWeek); // Volta para o Domingo daquela semana UTC
+          d.setUTCHours(0, 0, 0, 0);
+          return d.getTime(); // Retorna o timestamp UTC do início da semana UTC
+        };
+        const weeklyUTCStart = getUTCWeekStart(endDate);
+        const weeklyUTCEndDate = new Date(weeklyUTCStart);
+        weeklyUTCEndDate.setUTCDate(weeklyUTCEndDate.getUTCDate() + 6); // Fim da semana UTC (Sábado)
+        weeklyUTCEndDate.setUTCHours(23, 59, 59, 999);
+        const weeklyUTCEnd = weeklyUTCEndDate.getTime();
 
-        // Weekly boundaries (local week, converted to UTC timestamps)
-        const tempDateForWeek = new Date(endYear, endMonth, endDay); // Create a local date for the endDay
-        const dayOfWeek = tempDateForWeek.getDay(); // 0 for Sunday, 6 for Saturday (local day of week)
-        
-        const weeklyStartLocal = new Date(tempDateForWeek);
-        weeklyStartLocal.setDate(tempDateForWeek.getDate() - dayOfWeek); // Go back to Sunday of that week
-        weeklyStartLocal.setHours(0, 0, 0, 0);
-
-        const weeklyEndLocal = new Date(tempDateForWeek);
-        weeklyEndLocal.setDate(tempDateForWeek.getDate() + (6 - dayOfWeek)); // Go forward to Saturday of that week
-        weeklyEndLocal.setHours(23, 59, 59, 999);
-        const weeklyStartTimestamp = weeklyStartLocal.getTime();
-        const weeklyEndTimestamp = weeklyEndLocal.getTime();
-
-        // Monthly boundaries (local month, converted to UTC timestamps)
-        const monthlyStartLocal = new Date(endYear, endMonth, 1, 0, 0, 0, 0);
-        const monthlyEndLocal = new Date(endYear, endMonth + 1, 0, 23, 59, 59, 999); // Last day of the month
-        const monthlyStartTimestamp = monthlyStartLocal.getTime();
-        const monthlyEndTimestamp = monthlyEndLocal.getTime();
-        // --- Fim do cálculo dos limites de data ---
+        // Para Receita Mensal: baseada no mês da data de fim selecionada (mês UTC)
+        const monthlyUTCStart = new Date(endDate.substring(0, 7) + '-01T00:00:00.000Z').getTime(); // YYYY-MM-01 UTC
+        const tempMonthEnd = new Date(endDate.substring(0, 7) + '-01T00:00:00.000Z');
+        tempMonthEnd.setUTCMonth(tempMonthEnd.getUTCMonth() + 1);
+        tempMonthEnd.setUTCDate(0); // Último dia do mês anterior (que é o mês selecionado)
+        tempMonthEnd.setUTCHours(23, 59, 59, 999);
+        const monthlyUTCEnd = tempMonthEnd.getTime();
+        // --- Fim da definição dos limites de data ---
 
         typedAppointments.forEach((appt) => {
           if (appt.status === 'concluido') {
@@ -120,14 +109,16 @@ export default function FinancialReports() {
 
               const apptDateTimestamp = new Date(appt.data_hora_inicio).getTime(); // Este é o timestamp UTC do agendamento
 
-              // Comparar o timestamp UTC do agendamento com os limites UTC calculados
-              if (apptDateTimestamp >= dailyStartTimestamp && apptDateTimestamp <= dailyEndTimestamp) {
+              // Comparar com os limites do dia UTC
+              if (apptDateTimestamp >= dailyUTCStart && apptDateTimestamp <= dailyUTCEnd) {
                 calculatedDailyRevenue += servicePrice;
               }
-              if (apptDateTimestamp >= weeklyStartTimestamp && apptDateTimestamp <= weeklyEndTimestamp) {
+              // Comparar com os limites da semana UTC
+              if (apptDateTimestamp >= weeklyUTCStart && apptDateTimestamp <= weeklyUTCEnd) {
                 calculatedWeeklyRevenue += servicePrice;
               }
-              if (apptDateTimestamp >= monthlyStartTimestamp && apptDateTimestamp <= monthlyEndTimestamp) {
+              // Comparar com os limites do mês UTC
+              if (apptDateTimestamp >= monthlyUTCStart && apptDateTimestamp <= monthlyUTCEnd) {
                 calculatedMonthlyRevenue += servicePrice;
               }
             } else {
