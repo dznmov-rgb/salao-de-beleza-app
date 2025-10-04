@@ -6,6 +6,7 @@ export default function SignUp() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState(''); // Adicionado campo de telefone
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,7 +19,11 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-      await signUp(name, email, password);
+      // Determina a role. Para o cadastro público, será 'client'.
+      // A lógica de 'admin' para o primeiro usuário deve ser tratada em um fluxo de setup inicial,
+      // ou o primeiro usuário a se cadastrar aqui será um cliente e um admin precisará ser criado manualmente.
+      // Por simplicidade, assumimos que este é o cadastro de clientes.
+      await signUp(name, email, password, 'client', phone); // Passa 'client' como role e o telefone
       setSuccess('Cadastro realizado com sucesso! Verifique seu e-mail para confirmar a conta.');
     } catch (err: any) {
       setError(err.message || 'Ocorreu um erro ao criar a conta.');
@@ -74,6 +79,19 @@ export default function SignUp() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  Telefone (WhatsApp)
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                   required
                 />

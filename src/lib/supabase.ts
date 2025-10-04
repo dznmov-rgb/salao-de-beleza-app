@@ -10,15 +10,15 @@ export type Profile = {
   full_name: string;
   email: string;
   telefone: string | null;
-  role: 'admin' | 'professional';
-  commission_percentage: number;
+  role: 'admin' | 'professional' | 'client'; // Adicionado 'client'
+  commission_percentage: number | null; // Pode ser null para clientes
   foto_url: string | null;
-  is_working: boolean;
+  is_working: boolean | null; // Pode ser null para clientes
   created_at: string;
 };
 
 export type Servico = {
-  id: number; // Corrigido para number
+  id: number;
   nome_servico: string;
   preco: number;
   duracao_media_minutos: number;
@@ -26,22 +26,23 @@ export type Servico = {
   created_at: string;
 };
 
-export type Cliente = { // Adicionado o tipo Cliente
+export type Cliente = {
   id: number;
+  user_id: string | null; // Adicionado user_id para vincular ao auth.users
   nome_completo: string;
   telefone: string;
   created_at: string;
 };
 
 export type Agendamento = {
-  id: number; // Corrigido para number
+  id: number;
   cliente_nome: string;
   cliente_telefone: string;
-  id_profissional: string | null; // Pode ser null se 'any' for selecionado
-  id_servico: number; // Corrigido para number
+  id_profissional: string | null;
+  id_servico: number;
   data_hora_inicio: string;
   data_hora_fim: string;
-  status: 'agendado' | 'executado' | 'nao_compareceu' | 'concluido' | 'cancelado'; // Adicionado 'concluido' e 'cancelado'
+  status: 'agendado' | 'executado' | 'nao_compareceu' | 'concluido' | 'cancelado';
   created_at: string;
 };
 

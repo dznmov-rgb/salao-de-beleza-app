@@ -5,6 +5,7 @@ import QuickAppointment from './pages/QuickAppointment';
 import AdminDashboard from './pages/AdminDashboard';
 import ProfessionalDashboard from './pages/ProfessionalDashboard';
 import SignUp from './pages/SignUp';
+import ClientDashboard from './pages/ClientDashboard'; // Importa o novo ClientDashboard
 
 function AppRouter() {
   const { user, profile, loading } = useAuth();
@@ -51,6 +52,10 @@ function AppRouter() {
 
   if (profile.role === 'professional') {
     return <ProfessionalDashboard />;
+  }
+
+  if (profile.role === 'client') { // Nova rota para clientes
+    return <ClientDashboard />;
   }
 
   // CASO DE FALHA, VAI PARA O LOGIN

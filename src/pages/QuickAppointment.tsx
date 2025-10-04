@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { supabase, Profile } from '../lib/supabase';
 import { ArrowLeft } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext'; // Importar useAuth
 
 type Service = { id: number; nome_servico: string; preco: number; duracao_media_minutos: number; };
 
 export default function QuickAppointment() {
+  const { user, profile } = useAuth(); // Obter user e profile do AuthContext
   const [step, setStep] = useState(1);
-  const [clientName, setClientName] = useState('');
-  const [clientPhone, setClientPhone] = useState('');
+  const [clientName, setClientName] = useState(profile?.full_name || ''); // Preencher com nome do perfil se logado
+  const [clientPhone, setClientPhone] = useState(profile?.telefone || ''); // Preencher com telefone do perfil se logado
   const [clientId, setClientId] = useState<number | null>(null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedProfessional, setSelectedProfessional] = useState<Profile | 'any' | null>(null);
@@ -19,10 +21,71 @@ export default function QuickAppointment() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Efeito para preencher nome e telefone se o cliente estiver logado
+  useEffect(() => {
+    if (profile && profile.role === 'client') {
+      setClientName(profile.full_name || '');
+      setClientPhone(profile.telefone || '');
+      // Tenta encontrar o cliente existente ou cria um novo e vincula ao user_id
+      const findOrCreateClient = async () => {
+        setLoading(true);
+        try {
+          let { data: existingClient } = await supabase
+            .from('clientes')
+            .select('id')
+            .eq('user_id', user!.id)
+            .maybeSingle();
+
+          if (existingClient) {
+            setClientId(existingClient.id);
+          } else {
+            // Se não encontrou pelo user_id, tenta pelo telefone/email
+            let { data: clientByPhone } = await supabase
+              .from('clientes')
+              .select('id, nome_completo')
+              .eq('telefone', profile.telefone)
+              .maybeSingle();
+
+            if (clientByPhone) {
+              // Se encontrou pelo telefone, atualiza para vincular ao user_id
+              await supabase.from('clientes').update({ user_id: user!.id }).eq('id', clientByPhone.id);
+              setClientId(clientByPhone.id);
+            } else {
+              // Se não encontrou, cria um novo cliente e vincula ao user_id
+              const { data: newClient } = await supabase
+                .from('clientes')
+                .insert({ nome_completo: profile.full_name, telefone: profile.telefone, user_id: user!.id })
+                .select('id')
+                .single();
+              if (newClient) {
+                setClientId(newClient.id);
+              }
+            }
+          }
+        } catch (err) {
+          console.error("Erro ao vincular cliente logado:", err);
+          setError("Erro ao carregar seus dados de cliente.");
+        } finally {
+          setLoading(false);
+        }
+      };
+      findOrCreateClient();
+    }
+  }, [user, profile]);
+
+
   const handleIdentificationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (user && profile?.role === 'client') {
+      // Se já está logado como cliente, o clientId já deve ter sido definido pelo useEffect
+      setStep(2);
+      setLoading(false);
+      return;
+    }
+
     try {
       let { data: existingClient } = await supabase
         .from('clientes')

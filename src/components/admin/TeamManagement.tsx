@@ -7,7 +7,7 @@ export default function TeamManagement() {
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    full_name: '', // Alterado de 'nome' para 'full_name'
+    full_name: '',
     email: '',
     telefone: '',
     commission_percentage: 0,
@@ -23,7 +23,7 @@ export default function TeamManagement() {
       .from('profiles')
       .select('*')
       .eq('role', 'professional')
-      .order('full_name'); // Ordenar por full_name
+      .order('full_name');
     if (data) setProfessionals(data);
   };
 
@@ -34,7 +34,7 @@ export default function TeamManagement() {
       await supabase
         .from('profiles')
         .update({
-          full_name: formData.full_name, // Alterado de 'nome' para 'full_name'
+          full_name: formData.full_name,
           telefone: formData.telefone,
           commission_percentage: formData.commission_percentage
         })
@@ -45,21 +45,24 @@ export default function TeamManagement() {
         password: formData.password,
         options: {
           data: {
-            full_name: formData.full_name // Usar full_name para o trigger
+            full_name: formData.full_name,
+            role: 'professional', // Definir a role como 'professional'
+            phone: formData.telefone // Passar o telefone para o trigger
           }
         }
       });
 
       if (authData.user && !authError) {
-        await supabase.from('profiles').insert({
-          id: authData.user.id,
-          full_name: formData.full_name, // Usar full_name
-          email: formData.email,
-          telefone: formData.telefone,
-          role: 'professional',
-          commission_percentage: formData.commission_percentage,
-          is_working: true
-        });
+        // O trigger handle_new_user já deve criar o perfil, mas garantimos aqui se necessário
+        // await supabase.from('profiles').insert({
+        //   id: authData.user.id,
+        //   full_name: formData.full_name,
+        //   email: formData.email,
+        //   telefone: formData.telefone,
+        //   role: 'professional',
+        //   commission_percentage: formData.commission_percentage,
+        //   is_working: true
+        // });
       }
     }
 
@@ -70,26 +73,27 @@ export default function TeamManagement() {
   const handleEdit = (professional: Profile) => {
     setEditingId(professional.id);
     setFormData({
-      full_name: professional.full_name, // Usar full_name
+      full_name: professional.full_name,
       email: professional.email,
       telefone: professional.telefone || '',
-      commission_percentage: professional.commission_percentage,
+      commission_percentage: professional.commission_percentage || 0, // Fallback para 0
       password: ''
     });
     setShowModal(true);
   };
 
-  const handleToggleStatus = async (id: string, currentStatus: boolean) => {
+  const handleToggleStatus = async (id: string, currentStatus: boolean | null) => { // Aceita boolean | null
+    const newStatus = !currentStatus; // Inverte o status atual (considerando null como false para inversão)
     await supabase
       .from('profiles')
-      .update({ is_working: !currentStatus })
+      .update({ is_working: newStatus })
       .eq('id', id);
     loadProfessionals();
   };
 
   const resetForm = () => {
     setFormData({
-      full_name: '', // Alterado de 'nome' para 'full_name'
+      full_name: '',
       email: '',
       telefone: '',
       commission_percentage: 0,
@@ -147,7 +151,7 @@ export default function TeamManagement() {
             <div className="mb-4">
               <p className={`text-sm ${professional.is_working ? 'text-slate-600' : 'text-slate-400'}`}>Comissão</p>
               <p className={`text-2xl font-bold ${professional.is_working ? 'text-slate-900' : 'text-slate-500'}`}>
-                {professional.commission_percentage}%
+                {professional.commission_percentage || 0}%
               </p>
             </div>
 
@@ -160,7 +164,7 @@ export default function TeamManagement() {
                 Editar
               </button>
               <button
-                onClick={() => handleToggleStatus(professional.id, professional.is_working)}
+                onClick={() => handleToggleStatus(professional.id, professional.is_working || false)} // Fallback para false
                 className={`flex-1 px-3 py-2 rounded-lg transition ${
                   professional.is_working
                     ? 'bg-red-100 text-red-700 hover:bg-red-200'
@@ -191,8 +195,8 @@ export default function TeamManagement() {
                 <label className="block text-sm font-medium text-slate-700 mb-2">Nome</label>
                 <input
                   type="text"
-                  value={formData.full_name} // Alterado de 'nome' para 'full_name'
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} // Alterado de 'nome' para 'full_name'
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent text-sm"
                   required
                 />
