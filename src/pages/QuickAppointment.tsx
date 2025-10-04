@@ -24,17 +24,20 @@ export default function QuickAppointment() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Efeito para preencher nome e telefone se o cliente estiver logado
+  // Efeito para inicializar o cliente e o passo com base no estado de autenticação
   useEffect(() => {
-    console.log('QuickAppointment: User/Profile useEffect triggered. User:', user?.id, 'Profile Role:', profile?.role);
-    if (user && profile && profile.role === 'client') {
-      setClientName(profile.full_name || '');
-      setClientPhone(profile.telefone || '');
-      setClientEmail(profile.email || '');
-      
-      const findOrCreateAndLinkClient = async () => {
-        setLoading(true);
-        setError(''); // Clear previous errors
+    console.log('QuickAppointment: User/Profile useEffect triggered. User:', user?.id, 'Profile Role:', profile?.role, 'Current Step:', step);
+
+    const initializeClientAndStep = async () => {
+      setLoading(true);
+      setError('');
+      setSuccessMessage(''); // Clear success message on re-init
+
+      if (user && profile && profile.role === 'client') {
+        setClientName(profile.full_name || '');
+        setClientPhone(profile.telefone || '');
+        setClientEmail(profile.email || '');
+
         try {
           let currentClientId: number | null = null;
 
@@ -79,27 +82,35 @@ export default function QuickAppointment() {
           
           if (currentClientId) {
             setClientId(currentClientId);
-            setStep(4); // Pula para a escolha do serviço se já estiver logado como cliente
+            if (step < 4) { // Only jump to step 4 if not already past it (e.g., confirming appointment)
+              setStep(4); 
+            }
+            console.log('QuickAppointment: Client ID set to', currentClientId, 'Step set to', step < 4 ? 4 : step);
           } else {
             setError("Não foi possível identificar ou criar seu perfil de cliente.");
+            setStep(0); // Go back to initial choice if client ID cannot be established
           }
 
         } catch (err) {
           console.error("QuickAppointment: Erro ao vincular cliente logado:", err);
           setError("Erro ao carregar seus dados de cliente.");
+          setStep(0); // Go back to initial choice on error
         } finally {
           setLoading(false);
         }
-      };
-      findOrCreateAndLinkClient();
-    } else if (!user && profile?.role === 'client') { // This case should not happen, but for safety
-        console.log('QuickAppointment: User is null but profile role is client. Resetting step.');
-        setStep(0);
-    } else if (!user) { // If not logged in, start from step 0
+      } else if (!user) { // If not logged in, always start from step 0
         console.log('QuickAppointment: User is not logged in. Starting from step 0.');
         setStep(0);
-    }
-  }, [user, profile]);
+        setClientId(null); // Clear client ID if not logged in
+      } else { // This covers cases like user is logged in but not a client role, or profile is null
+        console.log('QuickAppointment: User logged in but not client role or profile missing. Resetting step to 0.');
+        setStep(0);
+        setClientId(null);
+      }
+    };
+
+    initializeClientAndStep();
+  }, [user, profile]); // Depend on user and profile
 
 
   const handleGuestIdentificationSubmit = async (e: React.FormEvent) => {
@@ -333,7 +344,7 @@ export default function QuickAppointment() {
       <div className="text-center">
         <h1 className="text-2xl font-bold text-green-600 mb-4">Sucesso!</h1>
         <p className="text-gray-600">{successMessage}</p>
-        <button onClick={() => { setSuccessMessage(''); setStep(4); }} className="mt-6 inline-block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Continuar para Agendamento</button>
+        <button onClick={() => { setSuccessMessage(''); setStep(0); }} className="mt-6 inline-block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Agendar Outro Serviço</button>
       </div>
     );
 
@@ -485,6 +496,7 @@ export default function QuickAppointment() {
           </div>
         );
       case 8: // Sucesso (antigo step 6)
+        console.log('QuickAppointment: Rendering success step (step 8).'); // Added log here
         return (
           <div className="text-center">
             <h1 className="text-2xl font-bold text-green-600 mb-4">Agendamento Confirmado!</h1>
