@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { DollarSign, CalendarCheck, CalendarX, CalendarClock, CalendarDays, TrendingUp, TrendingDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
-// Define a type for the item of service, matching the structure from Supabase
+// Define um tipo para o item de serviço
 type ServiceItem = { preco: number };
 
-// Define a type for the appointment structure returned by Supabase
-// 'servico' is an array of ServiceItem objects
+// Define a type para a estrutura esperada do agendamento com o preço do serviço
+// Com base nos logs, 'servico' é um objeto direto ou null
 type AppointmentWithServicePrice = {
   id: number;
   status: string;
   data_hora_inicio: string;
-  servico: ServiceItem[]; // CORRECTED: 'servico' is an array of ServiceItem objects
+  servico: ServiceItem | null; // CORRIGIDO: 'servico' é um objeto direto ou null
 };
 
 export default function FinancialReports() {
@@ -67,8 +67,8 @@ export default function FinancialReports() {
       let pendingCount = 0;
 
       if (appointments) {
-        // The cast is now safe because the types match
-        const typedAppointments: AppointmentWithServicePrice[] = appointments as AppointmentWithServicePrice[];
+        // O cast para unknown primeiro ajuda o TypeScript a aceitar a conversão
+        const typedAppointments: AppointmentWithServicePrice[] = appointments as unknown as AppointmentWithServicePrice[];
 
         const selectedEndDateObj = new Date(endDate);
         selectedEndDateObj.setHours(23, 59, 59, 999);
@@ -93,8 +93,8 @@ export default function FinancialReports() {
 
         typedAppointments.forEach((appt) => {
           if (appt.status === 'concluido') {
-            // Access the price from the first element of the 'servico' array
-            const servicePrice = appt.servico?.[0]?.preco;
+            // CORRIGIDO: Acessa o preço diretamente do objeto 'servico'
+            const servicePrice = appt.servico?.preco;
             
             if (servicePrice !== undefined && servicePrice !== null) {
               calculatedTotalRevenue += servicePrice;
@@ -111,6 +111,7 @@ export default function FinancialReports() {
                 calculatedMonthlyRevenue += servicePrice;
               }
             } else {
+              // Este console.warn agora só deve aparecer se 'servico' for null ou 'preco' for null/undefined
               console.warn('Service price not found for completed appointment:', appt.id, 'Service data:', appt.servico);
             }
             completedCount++;
