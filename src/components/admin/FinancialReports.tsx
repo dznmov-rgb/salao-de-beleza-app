@@ -6,12 +6,12 @@ import { supabase } from '../../lib/supabase';
 type ServiceItem = { preco: number };
 
 // Define a type para a estrutura esperada do agendamento com o preço do serviço
-// Com base nos logs, 'servico' é um objeto direto ou null
+// CORRIGIDO: 'servico' é um array de ServiceItem ou null, conforme o erro do TypeScript
 type AppointmentWithServicePrice = {
   id: number;
   status: string;
   data_hora_inicio: string;
-  servico: ServiceItem | null; // CORRIGIDO: 'servico' é um objeto direto ou null
+  servico: ServiceItem[] | null; // Alterado para array de ServiceItem
 };
 
 export default function FinancialReports() {
@@ -70,48 +70,52 @@ export default function FinancialReports() {
         // O cast para unknown primeiro ajuda o TypeScript a aceitar a conversão
         const typedAppointments: AppointmentWithServicePrice[] = appointments as unknown as AppointmentWithServicePrice[];
 
-        const selectedEndDateObj = new Date(endDate);
-        selectedEndDateObj.setHours(23, 59, 59, 999);
+        // --- Ajuste para usar datas UTC para comparação ---
+        // Cria a data de fim selecionada no início do dia em UTC
+        const selectedEndDateObjUTC = new Date(endDate + 'T00:00:00Z'); 
+        
+        // Receita Diária: do início do dia da data de fim até o final do dia em UTC
+        const dailyStart = new Date(selectedEndDateObjUTC); // Já está em 00:00:00 UTC
+        const dailyEnd = new Date(selectedEndDateObjUTC);
+        dailyEnd.setUTCHours(23, 59, 59, 999); // Final do dia em UTC
 
-        const dailyStart = new Date(selectedEndDateObj);
-        dailyStart.setHours(0, 0, 0, 0);
-        const dailyEnd = new Date(selectedEndDateObj);
-        dailyEnd.setHours(23, 59, 59, 999);
+        // Receita Semanal: do início do domingo da semana da data de fim até o final do sábado em UTC
+        const dayOfWeek = selectedEndDateObjUTC.getUTCDay(); // 0 = Domingo, 6 = Sábado
+        const weeklyStart = new Date(selectedEndDateObjUTC);
+        weeklyStart.setUTCDate(selectedEndDateObjUTC.getUTCDate() - dayOfWeek); // Ajusta para o domingo da semana
+        weeklyStart.setUTCHours(0, 0, 0, 0); // Garante início do dia
 
-        const dayOfWeek = selectedEndDateObj.getDay();
-        const weeklyStart = new Date(selectedEndDateObj);
-        weeklyStart.setDate(selectedEndDateObj.getDate() - dayOfWeek);
-        weeklyStart.setHours(0, 0, 0, 0);
-        const weeklyEnd = new Date(selectedEndDateObj);
-        weeklyEnd.setDate(selectedEndDateObj.getDate() + (6 - dayOfWeek));
-        weeklyEnd.setHours(23, 59, 59, 999);
+        const weeklyEnd = new Date(selectedEndDateObjUTC);
+        weeklyEnd.setUTCDate(selectedEndDateObjUTC.getUTCDate() + (6 - dayOfWeek)); // Ajusta para o sábado da semana
+        weeklyEnd.setUTCHours(23, 59, 59, 999); // Garante final do dia
 
-        const monthlyStart = new Date(selectedEndDateObj.getFullYear(), selectedEndDateObj.getMonth(), 1);
-        monthlyStart.setHours(0, 0, 0, 0);
-        const monthlyEnd = new Date(selectedEndDateObj.getFullYear(), selectedEndDateObj.getMonth() + 1, 0);
-        monthlyEnd.setHours(23, 59, 59, 999);
+        // Receita Mensal: do início do primeiro dia do mês da data de fim até o final do último dia em UTC
+        const monthlyStart = new Date(Date.UTC(selectedEndDateObjUTC.getUTCFullYear(), selectedEndDateObjUTC.getUTCMonth(), 1));
+        const monthlyEnd = new Date(Date.UTC(selectedEndDateObjUTC.getUTCFullYear(), selectedEndDateObjUTC.getUTCMonth() + 1, 0));
+        monthlyEnd.setUTCHours(23, 59, 59, 999); // Garante final do dia
+        // --- Fim do ajuste de datas UTC ---
 
         typedAppointments.forEach((appt) => {
           if (appt.status === 'concluido') {
-            // CORRIGIDO: Acessa o preço diretamente do objeto 'servico'
-            const servicePrice = appt.servico?.preco;
+            // CORRIGIDO: Acessa o preço do primeiro item do array 'servico'
+            const servicePrice = appt.servico?.[0]?.preco;
             
             if (servicePrice !== undefined && servicePrice !== null) {
               calculatedTotalRevenue += servicePrice;
 
-              const apptDate = new Date(appt.data_hora_inicio);
+              const apptDate = new Date(appt.data_hora_inicio); // Esta data já é um objeto UTC
 
-              if (apptDate >= dailyStart && apptDate <= dailyEnd) {
+              // Compara usando os valores UTC
+              if (apptDate.getTime() >= dailyStart.getTime() && apptDate.getTime() <= dailyEnd.getTime()) {
                 calculatedDailyRevenue += servicePrice;
               }
-              if (apptDate >= weeklyStart && apptDate <= weeklyEnd) {
+              if (apptDate.getTime() >= weeklyStart.getTime() && apptDate.getTime() <= weeklyEnd.getTime()) {
                 calculatedWeeklyRevenue += servicePrice;
               }
-              if (apptDate >= monthlyStart && apptDate <= monthlyEnd) {
+              if (apptDate.getTime() >= monthlyStart.getTime() && apptDate.getTime() <= monthlyEnd.getTime()) {
                 calculatedMonthlyRevenue += servicePrice;
               }
             } else {
-              // Este console.warn agora só deve aparecer se 'servico' for null ou 'preco' for null/undefined
               console.warn('Service price not found for completed appointment:', appt.id, 'Service data:', appt.servico);
             }
             completedCount++;
