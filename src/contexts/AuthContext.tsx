@@ -8,7 +8,7 @@ type AuthContextType = {
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  signUp: (name: string, email: string, password: string, role: 'admin' | 'professional' | 'client', phone?: string) => Promise<void>; // Adicionado 'role' e 'phone'
+  signUp: (name: string, email: string, password: string, role: 'admin' | 'professional' | 'client', phone?: string) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -19,22 +19,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    const loadProfile = async (userId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (error) throw error;
+        setProfile(data);
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        setProfile(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user) {
-        loadProfile(session.user.id);
+        setUser(session.user);
+        await loadProfile(session.user.id);
       } else {
+        setUser(null);
+        setProfile(null);
         setLoading(false);
       }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Auth state change:', event, session); // Adicionado log aqui
+      console.log('Auth state change:', event, session);
       (async () => {
-        setUser(session?.user ?? null);
         if (session?.user) {
+          setLoading(true);
+          setUser(session.user);
+          setProfile(null);
           await loadProfile(session.user.id);
         } else {
+          setUser(null);
           setProfile(null);
           setLoading(false);
         }
@@ -43,23 +66,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
-
-  const loadProfile = async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .maybeSingle();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -72,10 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signUp = async (name: string, email: string, password: string, role: 'admin' | 'professional' | 'client', phone?: string) => {
-    // A lógica de 'count === 0' para admin será movida para o componente SignUp,
-    // ou o primeiro cadastro será sempre admin e os demais profissionais/clientes.
-    // Por enquanto, o role é passado explicitamente.
-
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -83,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data: {
           full_name: name,
           role: role,
-          phone: phone, // Passa o telefone para o trigger handle_new_user
+          phone: phone,
         },
       },
     });
