@@ -38,12 +38,8 @@ function AppRouter() {
           }
           return; // Sair cedo após o redirecionamento
         }
-        // Redirecionamento específico para clientes que tentam acessar quick-appointment
-        if (profile.role === 'client' && currentPath === '/quick-appointment') {
-          window.history.pushState({}, '', '/client-dashboard');
-          setCurrentPath('/client-dashboard');
-          return; // Sair cedo após o redirecionamento
-        }
+        // REMOVIDO: Redirecionamento específico para clientes que tentam acessar quick-appointment
+        // A lógica de inicialização do QuickAppointment.tsx já lida com clientes logados.
       } else { // O usuário NÃO está logado
         // Redirecionar de dashboards protegidos para o login
         if (currentPath === '/admin-dashboard' || currentPath === '/professional-dashboard' || currentPath === '/client-dashboard') {
