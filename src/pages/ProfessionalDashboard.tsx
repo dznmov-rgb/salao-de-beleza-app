@@ -7,8 +7,7 @@ import AppointmentDetailsModal from '../components/AppointmentDetailsModal';
 type Appointment = {
   id: number;
   data_hora_inicio: string;
-  cliente_nome: string;
-  cliente_telefone: string;
+  cliente: { nome_completo: string | null; telefone: string | null }[] | null; // Alterado para ser um array
   servicos: { nome_servico: string }[] | null;
   status: string;
 };
@@ -63,24 +62,24 @@ export default function ProfessionalDashboard() {
       // 1. BUSCA AGENDAMENTOS DO DIA ATUALMENTE SELECIONADO
       const { data: todayData } = await supabase
         .from('agendamentos')
-        .select(`id, data_hora_inicio, cliente_nome, cliente_telefone, status, servicos(nome_servico)`)
+        .select(`id, data_hora_inicio, status, servicos(nome_servico), cliente:clientes(nome_completo, telefone)`) // Alterado aqui
         .eq('id_profissional', user.id)
         .gte('data_hora_inicio', targetDayStart.toISOString())
         .lte('data_hora_inicio', targetDayEnd.toISOString())
         .order('data_hora_inicio', { ascending: true });
       
-      setAppointmentsToday(todayData || []); // Ensure it's an array
+      setAppointmentsToday(todayData as Appointment[] || []); // Ensure it's an array and cast
 
       // 2. BUSCA AGENDAMENTOS FUTUROS (A PARTIR DE AMANHÃ)
       const { data: futureData } = await supabase
         .from('agendamentos')
-        .select(`id, data_hora_inicio, cliente_nome, cliente_telefone, status, servicos(nome_servico)`) // Added cliente_telefone
+        .select(`id, data_hora_inicio, status, servicos(nome_servico), cliente:clientes(nome_completo, telefone)`) // Alterado aqui
         .eq('id_profissional', user.id)
         .eq('status', 'agendado')
         .gte('data_hora_inicio', tomorrowStart.toISOString())
         .order('data_hora_inicio', { ascending: true });
       
-      setFutureAppointments(futureData || []); // Ensure it's an array
+      setFutureAppointments(futureData as Appointment[] || []); // Ensure it's an array and cast
 
     } catch (error) {
       console.error("Erro ao buscar agenda:", error);
@@ -101,11 +100,11 @@ export default function ProfessionalDashboard() {
     setSelectedEventInfo({
         event: {
             id: appt.id,
-            title: `${appt.cliente_nome} - ${appt.servicos?.[0]?.nome_servico || ''}`, // Access first element of array
+            title: `${appt.cliente?.[0]?.nome_completo || 'Cliente Desconhecido'} - ${appt.servicos?.[0]?.nome_servico || ''}`, // Acessa o primeiro elemento do array
             start: new Date(appt.data_hora_inicio),
             extendedProps: { 
                 professional: profile?.full_name || 'N/A',
-                cliente_nome: appt.cliente_nome, 
+                cliente_nome: appt.cliente?.[0]?.nome_completo || 'Cliente Desconhecido', // Acessa o primeiro elemento do array
                 servico_nome: appt.servicos?.[0]?.nome_servico || '', // Access first element of array
                 status: appt.status
             }
@@ -202,10 +201,10 @@ export default function ProfessionalDashboard() {
                         <span className="text-lg font-bold">{new Date(appt.data_hora_inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                     <div>
-                        <p className="font-extrabold text-lg text-gray-900">{appt.cliente_nome}</p>
+                        <p className="font-extrabold text-lg text-gray-900">{appt.cliente?.[0]?.nome_completo || 'Cliente Desconhecido'}</p> {/* Acessa o primeiro elemento do array */}
                         <div className="text-sm text-gray-600 space-y-0.5 mt-1">
                             <div className="flex items-center space-x-1"><Scissors size={14} className="flex-shrink-0" /><span>{appt.servicos?.[0]?.nome_servico || ''}</span></div>
-                            <div className="flex items-center space-x-1"><Phone size={14} className="flex-shrink-0" /><span>{appt.cliente_telefone}</span></div>
+                            <div className="flex items-center space-x-1"><Phone size={14} className="flex-shrink-0" /><span>{appt.cliente?.[0]?.telefone || 'Telefone não disponível'}</span></div> {/* Acessa o primeiro elemento do array */}
                         </div>
                     </div>
                 </div>
@@ -234,7 +233,7 @@ export default function ProfessionalDashboard() {
                         <div className="flex items-center space-x-3">
                             <ArrowRight size={16} className="text-green-500" />
                             <div>
-                                <p className="font-medium">{appt.cliente_nome} ({appt.servicos?.[0]?.nome_servico || ''})</p>
+                                <p className="font-medium">{appt.cliente?.[0]?.nome_completo || 'Cliente Desconhecido'} ({appt.servicos?.[0]?.nome_servico || ''})</p> {/* Acessa o primeiro elemento do array */}
                                 <p className="text-xs text-gray-500">
                                     {new Date(appt.data_hora_inicio).toLocaleDateString('pt-BR', { dateStyle: 'short' })} às 
                                     {new Date(appt.data_hora_inicio).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
