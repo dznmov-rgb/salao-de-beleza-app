@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 type Service = { id: number; nome_servico: string; preco: number; duracao_media_minutos: number; };
 
 export default function QuickAppointment() {
-  const { user, profile, signIn, signUp } = useAuth();
+  const { user, profile, signIn, signUp, loading: authLoading } = useAuth(); // Use authLoading
   const [step, setStep] = useState(0); // Novo passo inicial para escolha
   const [clientName, setClientName] = useState(profile?.full_name || '');
   const [clientPhone, setClientPhone] = useState(profile?.telefone || '');
@@ -26,12 +26,19 @@ export default function QuickAppointment() {
 
   // Efeito para inicializar o cliente e o passo com base no estado de autenticação
   useEffect(() => {
-    console.log('QuickAppointment: User/Profile useEffect triggered. User:', user?.id, 'Profile Role:', profile?.role, 'Current Step:', step);
+    console.log('QuickAppointment: User/Profile useEffect triggered. User:', user?.id, 'Profile Role:', profile?.role, 'Current Step:', step, 'Auth Loading:', authLoading);
 
     const initializeClientAndStep = async () => {
       setLoading(true);
       setError('');
       setSuccessMessage(''); // Clear success message on re-init
+
+      // Espera o AuthContext terminar de carregar antes de tomar decisões
+      if (authLoading) {
+        console.log('QuickAppointment: Auth is still loading, deferring initialization.');
+        setLoading(false); // Garante que o loading local seja desativado enquanto o auth carrega
+        return;
+      }
 
       try {
         if (user && profile && profile.role === 'client') {
@@ -82,36 +89,37 @@ export default function QuickAppointment() {
           
           if (currentClientId) {
             setClientId(currentClientId);
-            if (step < 4) { // Only jump to step 4 if not already past it (e.g., confirming appointment)
+            // Apenas avança para o passo 4 se o passo atual for 0 ou menor que 4
+            // Isso evita resetar o fluxo se o usuário já estiver em um passo mais avançado (ex: confirmação)
+            if (step < 4 || step === 0) { 
               setStep(4); 
             }
-            console.log('QuickAppointment: Client ID set to', currentClientId, 'Step set to', step < 4 ? 4 : step);
+            console.log('QuickAppointment: Client ID set to', currentClientId, 'Step set to', (step < 4 || step === 0) ? 4 : step);
           } else {
             setError("Não foi possível identificar ou criar seu perfil de cliente.");
-            setStep(0); // Go back to initial choice if client ID cannot be established
+            setStep(0); // Volta para a escolha inicial se o ID do cliente não puder ser estabelecido
           }
 
-        } else if (!user) { // If not logged in, always start from step 0
+        } else if (!user) { // Se não estiver logado, sempre começa do passo 0
           console.log('QuickAppointment: User is not logged in. Starting from step 0.');
           setStep(0);
-          setClientId(null); // Clear client ID if not logged in
-        } else { // This covers cases like user is logged in but not a client role (admin/professional), or profile is null
-          console.log('QuickAppointment: User logged in but not client role or profile missing. Resetting step to 0.');
+          setClientId(null); // Limpa o ID do cliente se não estiver logado
+        } else { // Isso cobre casos como usuário logado mas não com role de cliente (admin/professional)
+          console.log('QuickAppointment: User logged in but not client role. Resetting step to 0.');
           setStep(0);
           setClientId(null);
         }
       } catch (err) {
         console.error("QuickAppointment: Erro durante a inicialização:", err);
         setError("Ocorreu um erro ao inicializar a página.");
-        setStep(0); // Fallback to step 0 on any error
+        setStep(0); // Volta para o passo 0 em caso de erro
       } finally {
         setLoading(false); // Garante que o loading seja desativado em todos os cenários
       }
     };
 
     initializeClientAndStep();
-  }, [user, profile]); // Depend on user and profile
-
+  }, [user, profile, authLoading]); // Depende de user, profile e authLoading
 
   const handleGuestIdentificationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -272,45 +280,6 @@ export default function QuickAppointment() {
     };
     loadStepData();
   }, [step]);
-
-  const calculateAvailableSlots = async (date: Date) => {
-    if (!selectedService || !selectedProfessional) return;
-    setLoading(true);
-    setAvailableSlots([]);
-    const serviceDuration = selectedService.duracao_media_minutos;
-    const professionalId = selectedProfessional === 'any' ? null : selectedProfessional.id;
-    const dayStart = new Date(new Date(date).setHours(0, 0, 0, 0)).toISOString();
-    const dayEnd = new Date(new Date(date).setHours(23, 59, 59, 999)).toISOString();
-    let query = supabase.from('agendamentos').select('data_hora_inicio, data_hora_fim').gte('data_hora_inicio', dayStart).lte('data_hora_inicio', dayEnd);
-    if (professionalId) { query = query.eq('id_profissional', professionalId); }
-    const { data: existingAppointments, error } = await query;
-    if (error) { console.error("QuickAppointment: Erro ao buscar agendamentos existentes:", error); setLoading(false); return; }
-    const busySlots = existingAppointments.map(appt => ({ start: new Date(appt.data_hora_inicio), end: new Date(appt.data_hora_fim) }));
-    const slots: Date[] = [];
-    const workDayStart = 9, workDayEnd = 18, slotInterval = 30;
-    for (let hour = workDayStart; hour < workDayEnd; hour++) {
-      for (let minute = 0; minute < 60; minute += slotInterval) {
-        const potentialStart = new Date(new Date(date).setHours(hour, minute, 0, 0));
-        const potentialEnd = new Date(potentialStart.getTime() + serviceDuration * 60000);
-        if (potentialEnd.getHours() > workDayEnd || (potentialEnd.getHours() === workDayEnd && potentialEnd.getMinutes() > 0)) continue;
-        let isFree = true;
-        for (const busy of busySlots) {
-          if ((potentialStart >= busy.start && potentialStart < busy.end) || (potentialEnd > busy.start && potentialEnd <= busy.end) || (potentialStart <= busy.start && potentialEnd >= busy.end)) { isFree = false; break; }
-        }
-        if (isFree) { slots.push(potentialStart); }
-      }
-    }
-    setAvailableSlots(slots);
-    setLoading(false);
-    console.log('QuickAppointment: Available slots calculated:', slots);
-  };
-
-  useEffect(() => {
-    if (selectedDate && selectedService && selectedProfessional) {
-      console.log('QuickAppointment: Recalculating available slots due to selection change.');
-      calculateAvailableSlots(selectedDate);
-    }
-  }, [selectedDate, selectedProfessional, selectedService]);
 
   const handleNextStep = () => {
     console.log('QuickAppointment: Moving to next step:', step + 1);
