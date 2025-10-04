@@ -1,15 +1,17 @@
 import { useState, useEffect } from 'react';
 import { supabase, Profile } from '../lib/supabase';
-import { ArrowLeft } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext'; // Importar useAuth
+import { ArrowLeft, UserPlus, LogIn } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 type Service = { id: number; nome_servico: string; preco: number; duracao_media_minutos: number; };
 
 export default function QuickAppointment() {
-  const { user, profile } = useAuth(); // Obter user e profile do AuthContext
-  const [step, setStep] = useState(1);
-  const [clientName, setClientName] = useState(profile?.full_name || ''); // Preencher com nome do perfil se logado
-  const [clientPhone, setClientPhone] = useState(profile?.telefone || ''); // Preencher com telefone do perfil se logado
+  const { user, profile, signIn, signUp } = useAuth();
+  const [step, setStep] = useState(0); // Novo passo inicial para escolha
+  const [clientName, setClientName] = useState(profile?.full_name || '');
+  const [clientPhone, setClientPhone] = useState(profile?.telefone || '');
+  const [clientEmail, setClientEmail] = useState(''); // Para login/signup
+  const [clientPassword, setClientPassword] = useState(''); // Para login/signup
   const [clientId, setClientId] = useState<number | null>(null);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedProfessional, setSelectedProfessional] = useState<Profile | 'any' | null>(null);
@@ -20,12 +22,14 @@ export default function QuickAppointment() {
   const [professionals, setProfessionals] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Efeito para preencher nome e telefone se o cliente estiver logado
   useEffect(() => {
-    if (profile && profile.role === 'client') {
+    if (user && profile && profile.role === 'client') {
       setClientName(profile.full_name || '');
       setClientPhone(profile.telefone || '');
+      setClientEmail(profile.email || '');
       // Tenta encontrar o cliente existente ou cria um novo e vincula ao user_id
       const findOrCreateClient = async () => {
         setLoading(true);
@@ -62,6 +66,7 @@ export default function QuickAppointment() {
               }
             }
           }
+          setStep(4); // Pula para a escolha do serviço se já estiver logado como cliente
         } catch (err) {
           console.error("Erro ao vincular cliente logado:", err);
           setError("Erro ao carregar seus dados de cliente.");
@@ -74,17 +79,10 @@ export default function QuickAppointment() {
   }, [user, profile]);
 
 
-  const handleIdentificationSubmit = async (e: React.FormEvent) => {
+  const handleGuestIdentificationSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    if (user && profile?.role === 'client') {
-      // Se já está logado como cliente, o clientId já deve ter sido definido pelo useEffect
-      setStep(2);
-      setLoading(false);
-      return;
-    }
 
     try {
       let { data: existingClient } = await supabase
@@ -106,7 +104,7 @@ export default function QuickAppointment() {
           setClientId(newClient.id);
         }
       }
-      setStep(2);
+      setStep(4); // Próximo passo: Escolha o Serviço
     } catch (err: any) {
       console.error(err);
       setError("Ocorreu um erro na identificação. Tente novamente.");
@@ -115,8 +113,41 @@ export default function QuickAppointment() {
     }
   };
 
+  const handleLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    try {
+      await signIn(clientEmail, clientPassword);
+      // AuthContext useEffect will handle setting user/profile and redirecting if needed
+      // For quick-appointment, it should automatically jump to step 4 via the useEffect above
+    } catch (err: any) {
+      setError(err.message || 'Email ou senha incorretos.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignupSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    setSuccessMessage('');
+    try {
+      await signUp(clientName, clientEmail, clientPassword, 'client', clientPhone);
+      setSuccessMessage('Cadastro realizado com sucesso! Verifique seu e-mail para confirmar a conta. Você será redirecionado para o agendamento.');
+      // AuthContext useEffect will handle setting user/profile and redirecting if needed
+      // For quick-appointment, it should automatically jump to step 4 via the useEffect above
+    } catch (err: any) {
+      setError(err.message || 'Ocorreu um erro ao criar a conta.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleConfirmAppointment = async () => {
     setLoading(true);
+    setError('');
     try {
       const { error } = await supabase.from('agendamentos').insert({
         id_cliente: clientId,
@@ -126,7 +157,7 @@ export default function QuickAppointment() {
         data_hora_fim: new Date(selectedDateTime!.getTime() + selectedService!.duracao_media_minutos * 60000).toISOString()
       });
       if (error) throw error;
-      setStep(6);
+      setStep(8); // Novo passo de sucesso
     } catch (err) {
       console.error(err);
       setError('Erro ao salvar agendamento.');
@@ -142,6 +173,7 @@ export default function QuickAppointment() {
       const { data, error } = await supabase
         .from('servicos')
         .select('*')
+        .eq('ativo', true) // Apenas serviços ativos
         .order('nome_servico');
       if (error) throw error;
       setServices(data || []);
@@ -159,7 +191,8 @@ export default function QuickAppointment() {
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'professional');
+        .eq('role', 'professional')
+        .eq('is_working', true); // Apenas profissionais em expediente
       if (error) throw error;
       setProfessionals(data || []);
     } catch (err: any) {
@@ -174,10 +207,10 @@ export default function QuickAppointment() {
       setLoading(true);
       setError('');
       try {
-        if (step === 2 && services.length === 0) {
+        if (step === 4 && services.length === 0) { // Antigo step 2
           await fetchServices();
         }
-        if (step === 3 && professionals.length === 0) {
+        if (step === 5 && professionals.length === 0) { // Antigo step 3
           await fetchProfessionals();
         }
       } catch (err: any) {
@@ -221,13 +254,16 @@ export default function QuickAppointment() {
   };
 
   useEffect(() => {
-    if (selectedDate) {
+    if (selectedDate && selectedService && selectedProfessional) {
       calculateAvailableSlots(selectedDate);
     }
   }, [selectedDate, selectedProfessional, selectedService]);
 
   const handleNextStep = () => setStep(prev => prev + 1);
-  const handleBackStep = () => { if (step === 4) setSelectedDate(null); setStep(prev => prev - 1); };
+  const handleBackStep = () => { 
+    if (step === 6) setSelectedDate(null); // Se voltar da escolha de data/hora
+    setStep(prev => prev - 1); 
+  };
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setAvailableSlots([]);
@@ -246,11 +282,36 @@ export default function QuickAppointment() {
   const renderStepContent = () => {
     if (loading) return <p className="text-center text-gray-500">Carregando...</p>;
     if (error) return <p className="text-center text-red-600">{error}</p>;
+    if (successMessage) return (
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-green-600 mb-4">Sucesso!</h1>
+        <p className="text-gray-600">{successMessage}</p>
+        <button onClick={() => { setSuccessMessage(''); setStep(4); }} className="mt-6 inline-block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Continuar para Agendamento</button>
+      </div>
+    );
+
     switch (step) {
-      case 1: // Identificação
+      case 0: // Escolha inicial: Convidado, Login, Cadastro
         return (
-          <form onSubmit={handleIdentificationSubmit} className="space-y-4">
-            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Identificação</h1>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Como você gostaria de agendar?</h1>
+            <div className="space-y-4">
+              <button onClick={() => setStep(1)} className="w-full flex items-center justify-center gap-3 p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition text-lg font-semibold text-gray-700">
+                <UserPlus size={24} /> Agendar como Convidado
+              </button>
+              <button onClick={() => setStep(2)} className="w-full flex items-center justify-center gap-3 p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition text-lg font-semibold text-gray-700">
+                <LogIn size={24} /> Entrar na Minha Conta
+              </button>
+              <button onClick={() => setStep(3)} className="w-full flex items-center justify-center gap-3 p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition text-lg font-semibold text-gray-700">
+                <UserPlus size={24} /> Criar Minha Conta
+              </button>
+            </div>
+          </div>
+        );
+      case 1: // Identificação como Convidado
+        return (
+          <form onSubmit={handleGuestIdentificationSubmit} className="space-y-4">
+            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Agendar como Convidado</h1>
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Seu Nome Completo</label>
               <input id="name" type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
@@ -262,7 +323,45 @@ export default function QuickAppointment() {
             <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Continuar</button>
           </form>
         );
-      case 2: // Escolha o Serviço
+      case 2: // Login de Cliente
+        return (
+          <form onSubmit={handleLoginSubmit} className="space-y-4">
+            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Entrar na Minha Conta</h1>
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input id="email" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
+            </div>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+              <input id="password" type="password" value={clientPassword} onChange={(e) => setClientPassword(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
+            </div>
+            <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Entrar</button>
+          </form>
+        );
+      case 3: // Cadastro de Cliente
+        return (
+          <form onSubmit={handleSignupSubmit} className="space-y-4">
+            <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Criar Minha Conta</h1>
+            <div>
+              <label htmlFor="signupName" className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+              <input id="signupName" type="text" value={clientName} onChange={(e) => setClientName(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
+            </div>
+            <div>
+              <label htmlFor="signupEmail" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input id="signupEmail" type="email" value={clientEmail} onChange={(e) => setClientEmail(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
+            </div>
+            <div>
+              <label htmlFor="signupPhone" className="block text-sm font-medium text-gray-700 mb-1">Telefone (WhatsApp)</label>
+              <input id="signupPhone" type="tel" value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
+            </div>
+            <div>
+              <label htmlFor="signupPassword" className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+              <input id="signupPassword" type="password" value={clientPassword} onChange={(e) => setClientPassword(e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg" required />
+            </div>
+            <button type="submit" className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Cadastrar e Agendar</button>
+          </form>
+        );
+      case 4: // Escolha o Serviço (antigo step 2)
         return (
           <div>
             <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Escolha o Serviço</h1>
@@ -278,7 +377,7 @@ export default function QuickAppointment() {
             </div>
           </div>
         );
-      case 3: // Escolha o Profissional
+      case 5: // Escolha o Profissional (antigo step 3)
         return (
           <div>
             <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Escolha o Profissional</h1>
@@ -286,13 +385,13 @@ export default function QuickAppointment() {
               <button onClick={() => { setSelectedProfessional('any'); handleNextStep(); }} className="w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition bg-blue-50 font-semibold text-gray-900">Sem Preferência</button>
               {professionals.map(pro => (
                 <button key={pro.id} onClick={() => { setSelectedProfessional(pro); handleNextStep(); }} className="w-full text-left p-4 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-500 transition">
-                  <span className="font-semibold text-gray-700">{pro.full_name}</span> {/* Corrigido: pro.nome para pro.full_name */}
+                  <span className="font-semibold text-gray-700">{pro.full_name}</span>
                 </button>
               ))}
             </div>
           </div>
         );
-      case 4: // Escolha Data e Hora
+      case 6: // Escolha Data e Hora (antigo step 4)
         return (
           <div>
             <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Escolha o Horário</h1>
@@ -325,25 +424,29 @@ export default function QuickAppointment() {
             )}
           </div>
         );
-      case 5: // Confirmação
+      case 7: // Confirmação (antigo step 5)
         return (
           <div className="space-y-4">
             <h1 className="text-2xl font-bold text-gray-900 text-center mb-6">Confirme seu Agendamento</h1>
             <div className="p-4 border border-gray-300 rounded-lg bg-gray-50 space-y-2 text-gray-700">
               <p><strong>Nome:</strong> {clientName}</p>
               <p><strong>Serviço:</strong> {selectedService?.nome_servico}</p>
-              <p><strong>Profissional:</strong> {selectedProfessional === 'any' ? 'Qualquer um' : selectedProfessional?.full_name}</p> {/* Corrigido: selectedProfessional?.nome para selectedProfessional?.full_name */}
+              <p><strong>Profissional:</strong> {selectedProfessional === 'any' ? 'Qualquer um' : selectedProfessional?.full_name}</p>
               <p><strong>Data e Hora:</strong> {selectedDateTime?.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) || 'A definir'}</p>
             </div>
             <button onClick={handleConfirmAppointment} disabled={loading} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Confirmar Agendamento</button>
           </div>
         );
-      case 6: // Sucesso
+      case 8: // Sucesso (antigo step 6)
         return (
           <div className="text-center">
             <h1 className="text-2xl font-bold text-green-600 mb-4">Agendamento Confirmado!</h1>
             <p className="text-gray-600">Seu horário foi marcado com sucesso. Mal podemos esperar para te ver!</p>
-            <a href="/" className="mt-6 inline-block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Voltar para o Início</a>
+            {user && profile?.role === 'client' ? (
+              <a href="/client-dashboard" className="mt-6 inline-block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Ir para Meu Painel</a>
+            ) : (
+              <button onClick={() => setStep(0)} className="mt-6 inline-block w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700">Agendar Outro Serviço</button>
+            )}
           </div>
         );
       default:
@@ -354,13 +457,13 @@ export default function QuickAppointment() {
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col items-center p-4 pt-10">
       <div className="w-full max-w-lg">
-        {step > 1 && step < 6 ? (
+        {step > 0 && step < 8 ? ( // Botão de voltar aparece a partir do passo 1, e não no sucesso
           <button onClick={handleBackStep} className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
             <ArrowLeft size={16} className="mr-1" />
             Voltar
           </button>
         ) : (
-          <div className="h-10 mb-4"></div>
+          <div className="h-10 mb-4"></div> // Espaçamento para manter o layout
         )}
         <div className="bg-white rounded-xl shadow-lg p-6">
           {renderStepContent()}
