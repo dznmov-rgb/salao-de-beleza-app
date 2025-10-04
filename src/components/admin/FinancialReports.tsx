@@ -4,9 +4,9 @@ import { supabase } from '../../lib/supabase';
 
 // Define a type para a estrutura esperada do agendamento com o preço do serviço
 type AppointmentWithServicePrice = {
-  id: number; // Adicionado 'id' aqui
+  id: number;
   status: string;
-  servico: { preco: number }[]; // Supabase frequentemente retorna dados de junção como um array
+  servico: { preco: number }[] | null; // Corrigido: agora 'servico' é um array de objetos ou null
 };
 
 export default function FinancialReports() {
@@ -52,18 +52,18 @@ export default function FinancialReports() {
       let pendingCount = 0;
 
       if (appointments) {
-        appointments.forEach((appt: AppointmentWithServicePrice) => { // Tipagem explícita para 'appt'
+        appointments.forEach((appt: AppointmentWithServicePrice) => {
           console.log('Processing appointment:', appt); // LOG DE DEBUG
           console.log('Service array:', appt.servico); // LOG DE DEBUG
           console.log('Service price (first element):', appt.servico?.[0]?.preco); // LOG DE DEBUG
 
           if (appt.status === 'concluido') {
-            // Garante que o array de serviço não esteja vazio e tenha um preço
+            // Acessa o preço do primeiro elemento do array 'servico'
             const servicePrice = appt.servico?.[0]?.preco;
             if (servicePrice !== undefined && servicePrice !== null) {
               calculatedRevenue += servicePrice;
             } else {
-              console.warn('Service price not found for completed appointment:', appt.id); // Aviso se o preço estiver faltando
+              console.warn('Service price not found for completed appointment:', appt.id);
             }
             completedCount++;
           } else if (appt.status === 'cancelado') {
