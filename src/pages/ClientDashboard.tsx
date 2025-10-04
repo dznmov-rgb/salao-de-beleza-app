@@ -23,21 +23,78 @@ export default function ClientDashboard() {
     setLoading(true);
     setError('');
     try {
-      const { data: clientData, error: clientError } = await supabase
+      let currentClientId: number | null = null;
+
+      // 1. Tenta encontrar o cliente pelo user_id (se já estiver vinculado)
+      let { data: existingClientByUser, error: clientByUserError } = await supabase
         .from('clientes')
-        .select('id')
+        .select('id, nome_completo, telefone')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      if (clientError) throw clientError;
-      if (!clientData) {
-        setError('Dados do cliente não encontrados. Por favor, tente fazer login novamente ou cadastre-se.');
+      if (clientByUserError) throw clientByUserError;
+
+      if (existingClientByUser) {
+        currentClientId = existingClientByUser.id;
+        console.log('ClientDashboard: Found client by user_id:', currentClientId);
+
+        // Opcional: Atualiza nome_completo ou telefone se estiverem faltando no cliente existente
+        const updateData: { nome_completo?: string; telefone?: string } = {};
+        if (!existingClientByUser.nome_completo && profile.full_name) {
+          updateData.nome_completo = profile.full_name;
+        }
+        if (!existingClientByUser.telefone && profile.telefone) {
+          updateData.telefone = profile.telefone;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          const { error: updateError } = await supabase
+            .from('clientes')
+            .update(updateData)
+            .eq('id', existingClientByUser.id);
+          if (updateError) throw updateError;
+          console.log('ClientDashboard: Client data updated from profile.');
+        }
+
+      } else {
+        // 2. Se não encontrou pelo user_id, tenta encontrar pelo telefone (para casos de convidado que virou usuário)
+        let { data: existingClientByPhone, error: clientByPhoneError } = await supabase
+          .from('clientes')
+          .select('id, nome_completo, telefone')
+          .eq('telefone', profile.telefone)
+          .maybeSingle();
+        
+        if (clientByPhoneError) throw clientByPhoneError;
+
+        if (existingClientByPhone) {
+          // 3. Se encontrou pelo telefone, atualiza para vincular ao user_id
+          console.log('ClientDashboard: Found client by phone, linking to user_id:', existingClientByPhone.id);
+          const { error: updateError } = await supabase.from('clientes').update({ user_id: user.id }).eq('id', existingClientByPhone.id);
+          if (updateError) throw updateError;
+          currentClientId = existingClientByPhone.id;
+        } else {
+          // 4. Se não encontrou de nenhuma forma, cria um novo cliente e vincula ao user_id
+          console.log('ClientDashboard: No existing client found, creating new and linking to user_id.');
+          const { data: newClient, error: insertError } = await supabase
+            .from('clientes')
+            .insert({ nome_completo: profile.full_name, telefone: profile.telefone, user_id: user.id })
+            .select('id')
+            .single();
+          if (insertError) throw insertError;
+          if (newClient) {
+            currentClientId = newClient.id;
+          }
+        }
+      }
+      
+      if (!currentClientId) {
+        setError('Não foi possível identificar ou criar seu perfil de cliente.');
         setLoading(false);
-        console.log('ClientDashboard: Client data not found for user ID:', user.id);
+        console.log('ClientDashboard: Client ID could not be established for user ID:', user.id);
         return;
       }
 
-      console.log('ClientDashboard: Client ID for fetching appointments:', clientData.id);
+      console.log('ClientDashboard: Client ID for fetching appointments:', currentClientId);
 
       const { data, error } = await supabase
         .from('agendamentos')
@@ -46,7 +103,7 @@ export default function ClientDashboard() {
           servico:servicos(nome_servico, duracao_media_minutos),
           profissional:profiles(full_name)
         `)
-        .eq('id_cliente', clientData.id)
+        .eq('id_cliente', currentClientId) // Use o currentClientId estabelecido
         .order('data_hora_inicio', { ascending: true });
 
       if (error) throw error;
