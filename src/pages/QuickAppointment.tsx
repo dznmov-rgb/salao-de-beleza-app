@@ -33,12 +33,12 @@ export default function QuickAppointment() {
       setError('');
       setSuccessMessage(''); // Clear success message on re-init
 
-      if (user && profile && profile.role === 'client') {
-        setClientName(profile.full_name || '');
-        setClientPhone(profile.telefone || '');
-        setClientEmail(profile.email || '');
+      try {
+        if (user && profile && profile.role === 'client') {
+          setClientName(profile.full_name || '');
+          setClientPhone(profile.telefone || '');
+          setClientEmail(profile.email || '');
 
-        try {
           let currentClientId: number | null = null;
 
           // 1. Tenta encontrar o cliente pelo user_id (se já estiver vinculado)
@@ -91,21 +91,21 @@ export default function QuickAppointment() {
             setStep(0); // Go back to initial choice if client ID cannot be established
           }
 
-        } catch (err) {
-          console.error("QuickAppointment: Erro ao vincular cliente logado:", err);
-          setError("Erro ao carregar seus dados de cliente.");
-          setStep(0); // Go back to initial choice on error
-        } finally {
-          setLoading(false);
+        } else if (!user) { // If not logged in, always start from step 0
+          console.log('QuickAppointment: User is not logged in. Starting from step 0.');
+          setStep(0);
+          setClientId(null); // Clear client ID if not logged in
+        } else { // This covers cases like user is logged in but not a client role (admin/professional), or profile is null
+          console.log('QuickAppointment: User logged in but not client role or profile missing. Resetting step to 0.');
+          setStep(0);
+          setClientId(null);
         }
-      } else if (!user) { // If not logged in, always start from step 0
-        console.log('QuickAppointment: User is not logged in. Starting from step 0.');
-        setStep(0);
-        setClientId(null); // Clear client ID if not logged in
-      } else { // This covers cases like user is logged in but not a client role, or profile is null
-        console.log('QuickAppointment: User logged in but not client role or profile missing. Resetting step to 0.');
-        setStep(0);
-        setClientId(null);
+      } catch (err) {
+        console.error("QuickAppointment: Erro durante a inicialização:", err);
+        setError("Ocorreu um erro ao inicializar a página.");
+        setStep(0); // Fallback to step 0 on any error
+      } finally {
+        setLoading(false); // Garante que o loading seja desativado em todos os cenários
       }
     };
 
