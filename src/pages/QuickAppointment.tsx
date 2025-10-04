@@ -49,22 +49,48 @@ export default function QuickAppointment() {
           let currentClientId: number | null = null;
 
           // 1. Tenta encontrar o cliente pelo user_id (se já estiver vinculado)
-          let { data: existingClientByUser } = await supabase
+          let { data: existingClientByUser, error: clientByUserError } = await supabase
             .from('clientes')
-            .select('id')
+            .select('id, nome_completo, telefone') // Seleciona também nome_completo e telefone
             .eq('user_id', user!.id)
             .maybeSingle();
+
+          if (clientByUserError) throw clientByUserError;
 
           if (existingClientByUser) {
             currentClientId = existingClientByUser.id;
             console.log('QuickAppointment: Found client by user_id:', currentClientId);
+
+            // Verifica se nome_completo ou telefone estão nulos e atualiza se necessário
+            if (!existingClientByUser.nome_completo || !existingClientByUser.telefone) {
+              console.log('QuickAppointment: Client data incomplete, attempting to update from profile.');
+              const updateData: { nome_completo?: string; telefone?: string } = {};
+              if (!existingClientByUser.nome_completo && profile.full_name) {
+                updateData.nome_completo = profile.full_name;
+              }
+              if (!existingClientByUser.telefone && profile.telefone) {
+                updateData.telefone = profile.telefone;
+              }
+
+              if (Object.keys(updateData).length > 0) {
+                const { error: updateError } = await supabase
+                  .from('clientes')
+                  .update(updateData)
+                  .eq('id', existingClientByUser.id);
+                if (updateError) throw updateError;
+                console.log('QuickAppointment: Client data updated from profile.');
+              }
+            }
+
           } else {
             // 2. Se não encontrou pelo user_id, tenta encontrar pelo telefone (para agendamentos de convidado)
-            let { data: existingClientByPhone } = await supabase
+            let { data: existingClientByPhone, error: clientByPhoneError } = await supabase
               .from('clientes')
-              .select('id, nome_completo')
+              .select('id, nome_completo, telefone')
               .eq('telefone', profile.telefone)
               .maybeSingle();
+            
+            if (clientByPhoneError) throw clientByPhoneError;
 
             if (existingClientByPhone) {
               // 3. Se encontrou pelo telefone, atualiza para vincular ao user_id
