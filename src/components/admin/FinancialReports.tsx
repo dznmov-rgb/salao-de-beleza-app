@@ -6,12 +6,11 @@ import { supabase } from '../../lib/supabase';
 type ServiceItem = { preco: number };
 
 // Define a type para a estrutura esperada do agendamento com o preço do serviço
-// CORRIGIDO: 'servico' é um objeto direto ou null, conforme o console.log
 type AppointmentWithServicePrice = {
   id: number;
   status: string;
   data_hora_inicio: string;
-  servico: ServiceItem | null; // Revertido para objeto direto
+  servico: ServiceItem | null;
 };
 
 export default function FinancialReports() {
@@ -43,6 +42,7 @@ export default function FinancialReports() {
     });
 
     try {
+      // A consulta ao Supabase já está correta para buscar dentro do período UTC
       const { data: appointments, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -67,52 +67,52 @@ export default function FinancialReports() {
       let pendingCount = 0;
 
       if (appointments) {
-        // CORRIGIDO: Usando 'as unknown as' para resolver a incompatibilidade de tipos
         const typedAppointments: AppointmentWithServicePrice[] = appointments as unknown as AppointmentWithServicePrice[];
 
-        // --- Ajuste para usar datas UTC para comparação ---
-        // Cria a data de fim selecionada no início do dia em UTC
-        const selectedEndDateObjUTC = new Date(endDate + 'T00:00:00Z'); 
-        
-        // Receita Diária: do início do dia da data de fim até o final do dia em UTC
-        const dailyStart = new Date(selectedEndDateObjUTC); // Já está em 00:00:00 UTC
-        const dailyEnd = new Date(selectedEndDateObjUTC);
-        dailyEnd.setUTCHours(23, 59, 59, 999); // Final do dia em UTC
+        // --- Calcular os limites de data local e converter para timestamps UTC para comparação ---
+        // Para Receita Diária: baseada na data de fim selecionada (dia local)
+        const localEndDate = new Date(endDate); // Ex: '2025-10-04' -> 2025-10-04T00:00:00.000-03:00 (local)
+        const dailyStartLocal = new Date(localEndDate.getFullYear(), localEndDate.getMonth(), localEndDate.getDate(), 0, 0, 0, 0);
+        const dailyEndLocal = new Date(localEndDate.getFullYear(), localEndDate.getMonth(), localEndDate.getDate(), 23, 59, 59, 999);
+        const dailyStartTimestamp = dailyStartLocal.getTime(); // Timestamp UTC do início do dia local
+        const dailyEndTimestamp = dailyEndLocal.getTime();     // Timestamp UTC do fim do dia local
 
-        // Receita Semanal: do início do domingo da semana da data de fim até o final do sábado em UTC
-        const dayOfWeek = selectedEndDateObjUTC.getUTCDay(); // 0 = Domingo, 6 = Sábado
-        const weeklyStart = new Date(selectedEndDateObjUTC);
-        weeklyStart.setUTCDate(selectedEndDateObjUTC.getUTCDate() - dayOfWeek); // Ajusta para o domingo da semana
-        weeklyStart.setUTCHours(0, 0, 0, 0); // Garante início do dia
+        // Para Receita Semanal: baseada na semana da data de fim selecionada (semana local)
+        const dayOfWeek = localEndDate.getDay(); // 0 para Domingo, 6 para Sábado (dia da semana local)
+        const weeklyStartLocal = new Date(localEndDate);
+        weeklyStartLocal.setDate(localEndDate.getDate() - dayOfWeek); // Volta para o Domingo
+        weeklyStartLocal.setHours(0, 0, 0, 0);
 
-        const weeklyEnd = new Date(selectedEndDateObjUTC);
-        weeklyEnd.setUTCDate(selectedEndDateObjUTC.getUTCDate() + (6 - dayOfWeek)); // Ajusta para o sábado da semana
-        weeklyEnd.setUTCHours(23, 59, 59, 999); // Garante final do dia
+        const weeklyEndLocal = new Date(localEndDate);
+        weeklyEndLocal.setDate(localEndDate.getDate() + (6 - dayOfWeek)); // Avança para o Sábado
+        weeklyEndLocal.setHours(23, 59, 59, 999);
+        const weeklyStartTimestamp = weeklyStartLocal.getTime();
+        const weeklyEndTimestamp = weeklyEndLocal.getTime();
 
-        // Receita Mensal: do início do primeiro dia do mês da data de fim até o final do último dia em UTC
-        const monthlyStart = new Date(Date.UTC(selectedEndDateObjUTC.getUTCFullYear(), selectedEndDateObjUTC.getUTCMonth(), 1));
-        const monthlyEnd = new Date(Date.UTC(selectedEndDateObjUTC.getUTCFullYear(), selectedEndDateObjUTC.getUTCMonth() + 1, 0));
-        monthlyEnd.setUTCHours(23, 59, 59, 999); // Garante final do dia
-        // --- Fim do ajuste de datas UTC ---
+        // Para Receita Mensal: baseada no mês da data de fim selecionada (mês local)
+        const monthlyStartLocal = new Date(localEndDate.getFullYear(), localEndDate.getMonth(), 1, 0, 0, 0, 0);
+        const monthlyEndLocal = new Date(localEndDate.getFullYear(), localEndDate.getMonth() + 1, 0, 23, 59, 59, 999); // Último dia do mês
+        const monthlyStartTimestamp = monthlyStartLocal.getTime();
+        const monthlyEndTimestamp = monthlyEndLocal.getTime();
+        // --- Fim do cálculo dos limites de data ---
 
         typedAppointments.forEach((appt) => {
           if (appt.status === 'concluido') {
-            // Acessa o preço diretamente da propriedade 'servico' (objeto)
             const servicePrice = appt.servico?.preco;
             
             if (servicePrice !== undefined && servicePrice !== null) {
               calculatedTotalRevenue += servicePrice;
 
-              const apptDate = new Date(appt.data_hora_inicio); // Esta data já é um objeto UTC
+              const apptDateTimestamp = new Date(appt.data_hora_inicio).getTime(); // Este é o timestamp UTC do agendamento
 
-              // Compara usando os valores UTC
-              if (apptDate.getTime() >= dailyStart.getTime() && apptDate.getTime() <= dailyEnd.getTime()) {
+              // Comparar o timestamp UTC do agendamento com os limites UTC calculados
+              if (apptDateTimestamp >= dailyStartTimestamp && apptDateTimestamp <= dailyEndTimestamp) {
                 calculatedDailyRevenue += servicePrice;
               }
-              if (apptDate.getTime() >= weeklyStart.getTime() && apptDate.getTime() <= weeklyEnd.getTime()) {
+              if (apptDateTimestamp >= weeklyStartTimestamp && apptDateTimestamp <= weeklyEndTimestamp) {
                 calculatedWeeklyRevenue += servicePrice;
               }
-              if (apptDate.getTime() >= monthlyStart.getTime() && apptDate.getTime() <= monthlyEnd.getTime()) {
+              if (apptDateTimestamp >= monthlyStartTimestamp && apptDateTimestamp <= monthlyEndTimestamp) {
                 calculatedMonthlyRevenue += servicePrice;
               }
             } else {
