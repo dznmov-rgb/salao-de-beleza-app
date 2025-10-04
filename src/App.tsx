@@ -5,7 +5,7 @@ import QuickAppointment from './pages/QuickAppointment';
 import AdminDashboard from './pages/AdminDashboard';
 import ProfessionalDashboard from './pages/ProfessionalDashboard';
 import SignUp from './pages/SignUp';
-import ClientDashboard from './pages/ClientDashboard'; // Importa o novo ClientDashboard
+import ClientDashboard from './pages/ClientDashboard';
 
 function AppRouter() {
   const { user, profile, loading } = useAuth();
@@ -15,12 +15,46 @@ function AppRouter() {
     const handlePopState = () => {
       setCurrentPath(window.location.pathname);
     };
-
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // Adicionado log para depuração
+  // Efeito para lidar com redirecionamentos baseados no estado de autenticação e role
+  useEffect(() => {
+    if (!loading) {
+      // Se o usuário está logado e tem um perfil
+      if (user && profile) {
+        // Redirecionar usuários logados de login/cadastro para seus respectivos dashboards
+        if (currentPath === '/' || currentPath === '/cadastro') {
+          if (profile.role === 'admin') {
+            window.history.pushState({}, '', '/admin-dashboard');
+            setCurrentPath('/admin-dashboard');
+          } else if (profile.role === 'professional') {
+            window.history.pushState({}, '', '/professional-dashboard');
+            setCurrentPath('/professional-dashboard');
+          } else if (profile.role === 'client') {
+            window.history.pushState({}, '', '/client-dashboard');
+            setCurrentPath('/client-dashboard');
+          }
+          return; // Sair cedo após o redirecionamento
+        }
+        // Redirecionamento específico para clientes que tentam acessar quick-appointment
+        if (profile.role === 'client' && currentPath === '/quick-appointment') {
+          window.history.pushState({}, '', '/client-dashboard');
+          setCurrentPath('/client-dashboard');
+          return; // Sair cedo após o redirecionamento
+        }
+      } else { // O usuário NÃO está logado
+        // Redirecionar de dashboards protegidos para o login
+        if (currentPath === '/admin-dashboard' || currentPath === '/professional-dashboard' || currentPath === '/client-dashboard') {
+          window.history.pushState({}, '', '/');
+          setCurrentPath('/');
+          return; // Sair cedo após o redirecionamento
+        }
+      }
+    }
+  }, [loading, user, profile, currentPath]); // Dependências para este efeito
+
   console.log('AppRouter: Loading state:', loading, 'User:', user?.id, 'Profile Role:', profile?.role, 'Current Path:', currentPath);
 
   if (loading) {
@@ -34,7 +68,8 @@ function AppRouter() {
     );
   }
 
-  // ROTAS PÚBLICAS
+  // Lógica de renderização após todas as verificações de redirecionamento e carregamento
+  // Rotas públicas
   if (currentPath === '/quick-appointment') {
     return <QuickAppointment />;
   }
@@ -43,12 +78,12 @@ function AppRouter() {
     return <SignUp />;
   }
 
-  // SE NÃO ESTIVER LOGADO, VAI PARA O LOGIN
+  // Se não estiver logado, mostra a página de login (será atingido se nenhuma rota pública corresponder e o usuário não estiver autenticado)
   if (!user || !profile) {
     return <Login />;
   }
   
-  // ROTAS PRIVADAS (PAINÉIS)
+  // Rotas autenticadas baseadas na role
   if (profile.role === 'admin') {
     return <AdminDashboard />;
   }
@@ -57,11 +92,11 @@ function AppRouter() {
     return <ProfessionalDashboard />;
   }
 
-  if (profile.role === 'client') { // Nova rota para clientes
+  if (profile.role === 'client') {
     return <ClientDashboard />;
   }
 
-  // CASO DE FALHA, VAI PARA O LOGIN
+  // Fallback (não deve ser alcançado se a lógica estiver correta)
   return <Login />;
 }
 
