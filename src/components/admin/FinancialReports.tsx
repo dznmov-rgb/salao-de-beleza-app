@@ -6,12 +6,12 @@ import { supabase } from '../../lib/supabase';
 type ServiceItem = { preco: number };
 
 // Define a type para a estrutura esperada do agendamento com o preço do serviço
-// Esta é a estrutura que o Supabase retorna com a seleção aninhada 'servico:servicos(preco)'
+// Com base nos logs, 'servico' é um array de ServiceItem ou null
 type AppointmentWithServicePrice = {
   id: number;
   status: string;
   data_hora_inicio: string;
-  servico: ServiceItem[] | null; // Supabase retorna como array de ServiceItem ou null
+  servico: ServiceItem[] | null; // CORRIGIDO: 'servico' é um array de ServiceItem ou null
 };
 
 export default function FinancialReports() {
@@ -43,18 +43,20 @@ export default function FinancialReports() {
     });
 
     try {
-      const { data, error } = await supabase
+      const { data: appointments, error } = await supabase
         .from('agendamentos')
         .select(`
           id,
           status,
           data_hora_inicio,
           servico:servicos(preco)
-        `);
+        `)
+        .gte('data_hora_inicio', `${startDate}T00:00:00.000Z`)
+        .lte('data_hora_inicio', `${endDate}T23:59:59.999Z`);
 
       if (error) throw error;
 
-      console.log('Fetched appointments for financial report:', data); // LOG DE DEBUG
+      console.log('Fetched appointments for financial report:', appointments); // LOG DE DEBUG
 
       let calculatedTotalRevenue = 0;
       let calculatedDailyRevenue = 0;
@@ -64,14 +66,9 @@ export default function FinancialReports() {
       let canceledCount = 0;
       let pendingCount = 0;
 
-      if (data) {
-        // Mapeia os dados para garantir a tipagem correta de 'servico'
-        const typedAppointments: AppointmentWithServicePrice[] = data.map((appt: any) => ({
-          id: appt.id,
-          status: appt.status,
-          data_hora_inicio: appt.data_hora_inicio,
-          servico: appt.servico ? appt.servico.map((s: any) => ({ preco: s.preco as number })) : null,
-        }));
+      if (appointments) {
+        // O cast direto agora é seguro porque o tipo AppointmentWithServicePrice foi corrigido
+        const typedAppointments: AppointmentWithServicePrice[] = appointments as AppointmentWithServicePrice[];
 
         // Definir os limites de data para o dia, semana e mês com base na endDate selecionada
         const selectedEndDateObj = new Date(endDate);
