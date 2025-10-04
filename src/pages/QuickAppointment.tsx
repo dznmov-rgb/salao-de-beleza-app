@@ -155,13 +155,35 @@ export default function QuickAppointment() {
     try {
       let { data: existingClient } = await supabase
         .from('clientes')
-        .select('id, nome_completo')
+        .select('id, nome_completo, telefone') // Seleciona nome_completo e telefone
         .eq('telefone', clientPhone)
         .maybeSingle();
 
       if (existingClient) {
         setClientId(existingClient.id);
         setClientName(existingClient.nome_completo || ''); // Ensure string
+
+        // NOVO: Atualiza nome_completo e telefone se estiverem faltando no cliente existente
+        if (!existingClient.nome_completo || !existingClient.telefone) {
+          console.log('QuickAppointment: Existing guest client data incomplete, attempting to update.');
+          const updateData: { nome_completo?: string; telefone?: string } = {};
+          if (!existingClient.nome_completo && clientName) {
+            updateData.nome_completo = clientName;
+          }
+          if (!existingClient.telefone && clientPhone) {
+            updateData.telefone = clientPhone;
+          }
+
+          if (Object.keys(updateData).length > 0) {
+            const { error: updateError } = await supabase
+              .from('clientes')
+              .update(updateData)
+              .eq('id', existingClient.id);
+            if (updateError) throw updateError;
+            console.log('QuickAppointment: Existing guest client data updated.');
+          }
+        }
+
       } else {
         const { data: newClient } = await supabase
           .from('clientes')
