@@ -24,8 +24,23 @@ function AppRouter() {
     if (!loading) {
       // Se o usuário está logado e tem um perfil
       if (user && profile) {
-        // Redirecionar usuários logados de login/cadastro OU quick-appointment para seus respectivos dashboards
-        if (currentPath === '/' || currentPath === '/cadastro' || currentPath === '/quick-appointment') {
+        // Lógica específica para /quick-appointment
+        if (currentPath === '/quick-appointment') {
+          if (profile.role === 'client') {
+            // Se um cliente está logado e na página de agendamento rápido, redireciona para o painel do cliente
+            console.log(`AppRouter: Cliente logado, redirecionando de /quick-appointment para /client-dashboard.`);
+            window.history.pushState({}, '', '/client-dashboard');
+            setCurrentPath('/client-dashboard');
+            return;
+          }
+          // Se admin/profissional está logado, permite que permaneça em /quick-appointment
+          // Eles podem estar testando o fluxo ou agendando para outra pessoa.
+          console.log(`AppRouter: Admin/Profissional logado, permanecendo em /quick-appointment.`);
+          return;
+        }
+
+        // Redirecionamento geral para outras rotas (login, cadastro)
+        if (currentPath === '/' || currentPath === '/cadastro') {
           let targetPath = '';
           if (profile.role === 'admin') {
             targetPath = '/admin-dashboard';
