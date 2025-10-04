@@ -1,6 +1,13 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, CalendarCheck, CalendarX, CalendarClock } from 'lucide-react'; // Adicionando novos ícones
+import { DollarSign, CalendarCheck, CalendarX, CalendarClock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+
+// Define a type para a estrutura esperada do agendamento com o preço do serviço
+type AppointmentWithServicePrice = {
+  id: number; // Adicionado 'id' aqui
+  status: string;
+  servico: { preco: number }[]; // Supabase frequentemente retorna dados de junção como um array
+};
 
 export default function FinancialReports() {
   const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
@@ -28,6 +35,7 @@ export default function FinancialReports() {
       const { data: appointments, error } = await supabase
         .from('agendamentos')
         .select(`
+          id,
           status,
           servico:servicos(preco)
         `)
@@ -36,15 +44,27 @@ export default function FinancialReports() {
 
       if (error) throw error;
 
+      console.log('Fetched appointments for financial report:', appointments); // LOG DE DEBUG
+
       let calculatedRevenue = 0;
       let completedCount = 0;
       let canceledCount = 0;
       let pendingCount = 0;
 
       if (appointments) {
-        appointments.forEach(appt => {
+        appointments.forEach((appt: AppointmentWithServicePrice) => { // Tipagem explícita para 'appt'
+          console.log('Processing appointment:', appt); // LOG DE DEBUG
+          console.log('Service array:', appt.servico); // LOG DE DEBUG
+          console.log('Service price (first element):', appt.servico?.[0]?.preco); // LOG DE DEBUG
+
           if (appt.status === 'concluido') {
-            calculatedRevenue += (appt.servico?.[0]?.preco || 0);
+            // Garante que o array de serviço não esteja vazio e tenha um preço
+            const servicePrice = appt.servico?.[0]?.preco;
+            if (servicePrice !== undefined && servicePrice !== null) {
+              calculatedRevenue += servicePrice;
+            } else {
+              console.warn('Service price not found for completed appointment:', appt.id); // Aviso se o preço estiver faltando
+            }
             completedCount++;
           } else if (appt.status === 'cancelado') {
             canceledCount++;
