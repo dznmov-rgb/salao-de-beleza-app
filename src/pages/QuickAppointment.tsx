@@ -63,7 +63,7 @@ export default function QuickAppointment() {
 
             // Verifica se nome_completo ou telefone estão nulos e atualiza se necessário
             if (!existingClientByUser.nome_completo || !existingClientByUser.telefone) {
-              console.log('QuickAppointment: Client data incomplete, attempting to update from profile.');
+              console.log('QuickAppointment: Existing client data incomplete, attempting to update from profile.');
               const updateData: { nome_completo?: string; telefone?: string } = {};
               if (!existingClientByUser.nome_completo && profile.full_name) {
                 updateData.nome_completo = profile.full_name;
@@ -429,6 +429,19 @@ export default function QuickAppointment() {
     }
     return days;
   };
+
+  // Adicionado: Se o usuário já está logado como cliente, mostra um estado de carregamento
+  // e permite que o App.tsx o redirecione.
+  if (!authLoading && user && profile && profile.role === 'client') {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Redirecionando para o seu painel...</p>
+        </div>
+      </div>
+    );
+  }
 
   const renderStepContent = () => {
     if (loading) return <p className="text-center text-gray-500">Carregando...</p>;
