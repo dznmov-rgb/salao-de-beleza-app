@@ -20,6 +20,9 @@ function AppRouter() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
+  // Adicionado log para depuração
+  console.log('AppRouter: Loading state:', loading, 'User:', user?.id, 'Profile Role:', profile?.role, 'Current Path:', currentPath);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900 flex items-center justify-center">
