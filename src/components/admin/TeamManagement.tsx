@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase, Profile } from '../../lib/supabase';
-import { Plus, Edit2, X, User } from 'lucide-react';
+import { Plus, Edit2, X, User, Clock } from 'lucide-react'; // Adicionado Clock para o ícone do botão
+import ProfessionalTimesheetModal from './ProfessionalTimesheetModal'; // Importa o novo modal
 
 export default function TeamManagement() {
   const [professionals, setProfessionals] = useState<Profile[]>([]);
-  const [showModal, setShowModal] = useState(false);
+  const [showModal, setShowModal] = useState(false); // Para o modal de adicionar/editar profissional
+  const [showTimesheetModal, setShowTimesheetModal] = useState(false); // Para o modal de ponto
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedProfessionalForTimesheet, setSelectedProfessionalForTimesheet] = useState<Profile | null>(null); // Para o modal de ponto
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -14,7 +17,7 @@ export default function TeamManagement() {
     password: ''
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(''); // Adicionado estado de erro
+  const [error, setError] = useState('');
 
   useEffect(() => {
     loadProfessionals();
@@ -30,20 +33,18 @@ export default function TeamManagement() {
       
       if (error) {
         console.error('Erro ao carregar profissionais:', error);
-        // Opcional: setError('Não foi possível carregar a lista de profissionais.');
         return;
       }
       if (data) setProfessionals(data || []);
     } catch (err: any) {
       console.error('Erro inesperado ao carregar profissionais:', err);
-      // Opcional: setError('Ocorreu um erro inesperado ao carregar profissionais.');
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(''); // Limpa erros anteriores
-    setLoading(true); // Ativa o estado de carregamento
+    setError('');
+    setLoading(true);
 
     try {
       if (editingId) {
@@ -56,7 +57,7 @@ export default function TeamManagement() {
           })
           .eq('id', editingId);
         
-        if (error) throw error; // Lança o erro se a atualização falhar
+        if (error) throw error;
       } else {
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: formData.email,
@@ -64,23 +65,23 @@ export default function TeamManagement() {
           options: {
             data: {
               full_name: formData.full_name,
-              role: 'professional', // Definir a role como 'professional'
-              phone: formData.telefone // Passar o telefone para o trigger
+              role: 'professional',
+              phone: formData.telefone
             }
           }
         });
 
-        if (authError) throw authError; // Lança o erro se o cadastro falhar
+        if (authError) throw authError;
         if (!authData.user) throw new Error('Usuário não retornado após o cadastro.');
       }
 
       resetForm();
-      loadProfessionals(); // Recarrega a lista para mostrar as alterações
+      loadProfessionals();
     } catch (err: any) {
       console.error('Erro ao salvar profissional:', err);
-      setError(err.message || 'Erro ao salvar profissional. Verifique os dados e tente novamente.'); // Exibe o erro para o usuário
+      setError(err.message || 'Erro ao salvar profissional. Verifique os dados e tente novamente.');
     } finally {
-      setLoading(false); // Desativa o estado de carregamento
+      setLoading(false);
     }
   };
 
@@ -90,17 +91,17 @@ export default function TeamManagement() {
       full_name: professional.full_name,
       email: professional.email,
       telefone: professional.telefone || '',
-      commission_percentage: professional.commission_percentage || 0, // Fallback para 0
+      commission_percentage: professional.commission_percentage || 0,
       password: ''
     });
     setShowModal(true);
   };
 
-  const handleToggleStatus = async (id: string, currentStatus: boolean | null) => { // Aceita boolean | null
+  const handleToggleStatus = async (id: string, currentStatus: boolean | null) => {
     setLoading(true);
     setError('');
     try {
-      const newStatus = !currentStatus; // Inverte o status atual (considerando null como false para inversão)
+      const newStatus = !currentStatus;
       const { error } = await supabase
         .from('profiles')
         .update({ is_working: newStatus })
@@ -116,6 +117,11 @@ export default function TeamManagement() {
     }
   };
 
+  const handleViewTimesheet = (professional: Profile) => {
+    setSelectedProfessionalForTimesheet(professional);
+    setShowTimesheetModal(true);
+  };
+
   const resetForm = () => {
     setFormData({
       full_name: '',
@@ -126,7 +132,7 @@ export default function TeamManagement() {
     });
     setEditingId(null);
     setShowModal(false);
-    setError(''); // Limpa o erro ao fechar o modal
+    setError('');
   };
 
   return (
@@ -181,7 +187,7 @@ export default function TeamManagement() {
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex gap-2 mt-4"> {/* Adicionado mt-4 para espaçamento */}
               <button
                 onClick={() => handleEdit(professional)}
                 className="flex-1 flex items-center justify-center gap-2 px-3 py-2 border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 transition"
@@ -190,7 +196,7 @@ export default function TeamManagement() {
                 Editar
               </button>
               <button
-                onClick={() => handleToggleStatus(professional.id, professional.is_working || false)} // Fallback para false
+                onClick={() => handleToggleStatus(professional.id, professional.is_working || false)}
                 className={`flex-1 px-3 py-2 rounded-lg transition ${
                   professional.is_working
                     ? 'bg-red-100 text-red-700 hover:bg-red-200'
@@ -198,6 +204,16 @@ export default function TeamManagement() {
                 }`}
               >
                 {professional.is_working ? 'Inativar' : 'Ativar'}
+              </button>
+            </div>
+            {/* NOVO BOTÃO "Ver Ponto" */}
+            <div className="mt-2">
+              <button
+                onClick={() => handleViewTimesheet(professional)}
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition"
+              >
+                <Clock className="w-4 h-4" />
+                Ver Ponto
               </button>
             </div>
           </div>
@@ -308,6 +324,13 @@ export default function TeamManagement() {
             </form>
           </div>
         </div>
+      )}
+
+      {showTimesheetModal && selectedProfessionalForTimesheet && (
+        <ProfessionalTimesheetModal
+          professional={selectedProfessionalForTimesheet}
+          onClose={() => setShowTimesheetModal(false)}
+        />
       )}
     </div>
   );

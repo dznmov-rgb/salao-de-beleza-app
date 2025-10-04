@@ -50,3 +50,12 @@ export type AgendamentoWithDetails = Agendamento & {
   servico: Servico;
   profissional: Profile;
 };
+
+export type Timesheet = {
+  id: number;
+  professional_id: string;
+  check_in_time: string;
+  check_out_time: string | null;
+  date: string;
+  created_at: string;
+};
