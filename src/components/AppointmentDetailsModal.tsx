@@ -28,6 +28,7 @@ export default function AppointmentDetailsModal({ eventInfo, onClose, onStatusCh
       
       if (error) throw error;
       
+      console.log('Appointment status updated successfully for ID:', id, 'New status:', newStatus); // Adicionado log aqui
       onStatusChange(); // Avisa o componente pai para recarregar a lista de eventos
       onClose();
     } catch (err: any) {
