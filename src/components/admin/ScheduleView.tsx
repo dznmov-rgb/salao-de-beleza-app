@@ -50,9 +50,13 @@ export default function ScheduleView() {
     switch (status) {
       case 'agendado':
         return 'bg-blue-100 text-blue-700';
-      case 'executado':
+      case 'concluido':
         return 'bg-green-100 text-green-700';
-      case 'nao_compareceu':
+      case 'cancelado':
+        return 'bg-red-100 text-red-700';
+      case 'executado': // Mantido para compatibilidade, se ainda for usado em algum lugar
+        return 'bg-green-100 text-green-700';
+      case 'nao_compareceu': // Mantido para compatibilidade, se ainda for usado em algum lugar
         return 'bg-red-100 text-red-700';
       default:
         return 'bg-slate-100 text-slate-700';
@@ -63,9 +67,13 @@ export default function ScheduleView() {
     switch (status) {
       case 'agendado':
         return 'Agendado';
-      case 'executado':
-        return 'Executado';
-      case 'nao_compareceu':
+      case 'concluido':
+        return 'Concluído';
+      case 'cancelado':
+        return 'Cancelado';
+      case 'executado': // Mantido para compatibilidade
+        return 'Concluído';
+      case 'nao_compareceu': // Mantido para compatibilidade
         return 'Não Compareceu';
       default:
         return status;
