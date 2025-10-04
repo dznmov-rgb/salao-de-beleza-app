@@ -216,14 +216,23 @@ export default function ClientDashboard() {
               <p className="text-gray-600 text-lg">
                 Você não tem nenhum agendamento futuro.
               </p>
-              <a
-                href="/quick-appointment"
-                className="mt-6 inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition"
-              >
-                Agendar um Serviço
-              </a>
+              {/* O botão de agendar serviço será movido para um card separado e sempre visível */}
             </div>
           )}
+        </div>
+
+        {/* NOVO CARD: Agendar Novo Serviço (sempre visível) */}
+        <div className="max-w-2xl w-full bg-white rounded-xl shadow-2xl p-8 text-center mb-8">
+          <h3 className="text-2xl font-bold text-gray-900 mb-6">Agendar Novo Serviço</h3>
+          <p className="text-gray-600 text-lg mb-6">
+            Precisa de um novo corte, manicure ou outro tratamento? Agende seu próximo horário agora!
+          </p>
+          <a
+            href="/quick-appointment"
+            className="inline-block bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-indigo-700 transition"
+          >
+            Agendar um Serviço
+          </a>
         </div>
 
         {/* Seção de Agendamentos Futuros */}
@@ -231,7 +240,7 @@ export default function ClientDashboard() {
           <div className="max-w-2xl w-full bg-white rounded-xl shadow-2xl p-8 mb-8 text-left">
             <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center space-x-2">
               <CalendarDays size={24} className="text-blue-600" />
-              <span>Outros Agendamentos Futuros</span>
+              <span>Outros Agendamentos Futuros ({upcomingAppointments.length - 1})</span>
             </h3>
             <div className="space-y-4">
               {upcomingAppointments.slice(1).map(appt => ( // Pula o primeiro, que já está no card principal
