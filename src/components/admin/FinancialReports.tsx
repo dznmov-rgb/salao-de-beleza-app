@@ -2,11 +2,15 @@ import { useState, useEffect } from 'react';
 import { DollarSign, CalendarCheck, CalendarX, CalendarClock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
+// Define um tipo para o item de serviço
+type ServiceItem = { preco: number };
+
 // Define a type para a estrutura esperada do agendamento com o preço do serviço
 type AppointmentWithServicePrice = {
   id: number;
   status: string;
-  servico: { preco: number }[] | null; // Corrigido: 'servico' é um array de objetos ou null
+  // Corrigido: 'servico' pode ser um array de ServiceItem, um ServiceItem direto ou null
+  servico: ServiceItem[] | ServiceItem | null; 
 };
 
 export default function FinancialReports() {
@@ -38,7 +42,9 @@ export default function FinancialReports() {
           id,
           status,
           servico:servicos(preco)
-        `); // Removido o filtro de data para testar com mais dados, se necessário.
+        `)
+        .gte('data_hora_inicio', `${startDate}T00:00:00.000Z`)
+        .lte('data_hora_inicio', `${endDate}T23:59:59.999Z`);
 
       if (error) throw error;
 
@@ -50,17 +56,28 @@ export default function FinancialReports() {
       let pendingCount = 0;
 
       if (appointments) {
-        // Cast the data to the expected type array
+        // Faz o cast explícito para o tipo flexível
         const typedAppointments: AppointmentWithServicePrice[] = appointments as AppointmentWithServicePrice[];
 
         typedAppointments.forEach((appt) => {
           console.log('Processing appointment:', appt); // LOG DE DEBUG
-          console.log('Service array:', appt.servico); // LOG DE DEBUG
-          console.log('Service price (first element):', appt.servico?.[0]?.preco); // LOG DE DEBUG
+          console.log('Service property:', appt.servico); // LOG DE DEBUG
 
           if (appt.status === 'concluido') {
-            // Acessa o preço do primeiro elemento do array 'servico'
-            const servicePrice = appt.servico?.[0]?.preco;
+            let servicePrice: number | null | undefined;
+
+            if (appt.servico) {
+              if (Array.isArray(appt.servico)) {
+                // Se for um array, pega o preço do primeiro elemento
+                servicePrice = appt.servico[0]?.preco;
+                console.log('Service is array, price:', servicePrice);
+              } else if (typeof appt.servico === 'object') {
+                // Se for um objeto direto, pega o preço diretamente
+                servicePrice = appt.servico.preco;
+                console.log('Service is object, price:', servicePrice);
+              }
+            }
+
             if (servicePrice !== undefined && servicePrice !== null) {
               calculatedRevenue += servicePrice;
             } else {
