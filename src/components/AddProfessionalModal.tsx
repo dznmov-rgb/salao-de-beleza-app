@@ -24,7 +24,7 @@ export default function AddProfessionalModal({ onClose, onSuccess }: Props) {
 
     try {
       // Usamos a função signUp, mas a lógica no AuthContext vai garantir que ele seja 'professional'
-      await signUp(name, email, password);
+      await signUp(name, email, password, 'professional', ''); // Adicionado 'professional' como role e string vazia para telefone
       onSuccess(); // Avisa o painel que o cadastro deu certo
       onClose(); // Fecha o modal
     } catch (err: any) {
