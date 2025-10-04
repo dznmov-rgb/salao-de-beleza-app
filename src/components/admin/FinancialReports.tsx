@@ -6,12 +6,12 @@ import { supabase } from '../../lib/supabase';
 type ServiceItem = { preco: number };
 
 // Define a type para a estrutura esperada do agendamento com o preço do serviço
-// CORRIGIDO: 'servico' é um array de ServiceItem ou null, conforme o erro do TypeScript
+// CORRIGIDO: 'servico' é um objeto direto ou null, conforme o console.log
 type AppointmentWithServicePrice = {
   id: number;
   status: string;
   data_hora_inicio: string;
-  servico: ServiceItem[] | null; // Alterado para array de ServiceItem
+  servico: ServiceItem | null; // Revertido para objeto direto
 };
 
 export default function FinancialReports() {
@@ -67,7 +67,7 @@ export default function FinancialReports() {
       let pendingCount = 0;
 
       if (appointments) {
-        // O cast para unknown primeiro ajuda o TypeScript a aceitar a conversão
+        // CORRIGIDO: Usando 'as unknown as' para resolver a incompatibilidade de tipos
         const typedAppointments: AppointmentWithServicePrice[] = appointments as unknown as AppointmentWithServicePrice[];
 
         // --- Ajuste para usar datas UTC para comparação ---
@@ -97,8 +97,8 @@ export default function FinancialReports() {
 
         typedAppointments.forEach((appt) => {
           if (appt.status === 'concluido') {
-            // CORRIGIDO: Acessa o preço do primeiro item do array 'servico'
-            const servicePrice = appt.servico?.[0]?.preco;
+            // Acessa o preço diretamente da propriedade 'servico' (objeto)
+            const servicePrice = appt.servico?.preco;
             
             if (servicePrice !== undefined && servicePrice !== null) {
               calculatedTotalRevenue += servicePrice;
