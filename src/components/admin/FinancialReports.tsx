@@ -70,28 +70,35 @@ export default function FinancialReports() {
         const typedAppointments: AppointmentWithServicePrice[] = appointments as unknown as AppointmentWithServicePrice[];
 
         // --- Calcular os limites de data local e converter para timestamps UTC para comparação ---
-        // Para Receita Diária: baseada na data de fim selecionada (dia local)
-        const localEndDate = new Date(endDate); // Ex: '2025-10-04' -> 2025-10-04T00:00:00.000-03:00 (local)
-        const dailyStartLocal = new Date(localEndDate.getFullYear(), localEndDate.getMonth(), localEndDate.getDate(), 0, 0, 0, 0);
-        const dailyEndLocal = new Date(localEndDate.getFullYear(), localEndDate.getMonth(), localEndDate.getDate(), 23, 59, 59, 999);
-        const dailyStartTimestamp = dailyStartLocal.getTime(); // Timestamp UTC do início do dia local
-        const dailyEndTimestamp = dailyEndLocal.getTime();     // Timestamp UTC do fim do dia local
+        // Parse endDate components explicitly to avoid timezone ambiguity with new Date(string)
+        const endDateParts = endDate.split('-').map(Number); // [year, month, day]
+        const endYear = endDateParts[0];
+        const endMonth = endDateParts[1] - 1; // Month is 0-indexed
+        const endDay = endDateParts[2];
 
-        // Para Receita Semanal: baseada na semana da data de fim selecionada (semana local)
-        const dayOfWeek = localEndDate.getDay(); // 0 para Domingo, 6 para Sábado (dia da semana local)
-        const weeklyStartLocal = new Date(localEndDate);
-        weeklyStartLocal.setDate(localEndDate.getDate() - dayOfWeek); // Volta para o Domingo
+        // Daily boundaries (local day, converted to UTC timestamps)
+        const dailyStartLocal = new Date(endYear, endMonth, endDay, 0, 0, 0, 0);
+        const dailyEndLocal = new Date(endYear, endMonth, endDay, 23, 59, 59, 999);
+        const dailyStartTimestamp = dailyStartLocal.getTime();
+        const dailyEndTimestamp = dailyEndLocal.getTime();
+
+        // Weekly boundaries (local week, converted to UTC timestamps)
+        const tempDateForWeek = new Date(endYear, endMonth, endDay); // Create a local date for the endDay
+        const dayOfWeek = tempDateForWeek.getDay(); // 0 for Sunday, 6 for Saturday (local day of week)
+        
+        const weeklyStartLocal = new Date(tempDateForWeek);
+        weeklyStartLocal.setDate(tempDateForWeek.getDate() - dayOfWeek); // Go back to Sunday of that week
         weeklyStartLocal.setHours(0, 0, 0, 0);
 
-        const weeklyEndLocal = new Date(localEndDate);
-        weeklyEndLocal.setDate(localEndDate.getDate() + (6 - dayOfWeek)); // Avança para o Sábado
+        const weeklyEndLocal = new Date(tempDateForWeek);
+        weeklyEndLocal.setDate(tempDateForWeek.getDate() + (6 - dayOfWeek)); // Go forward to Saturday of that week
         weeklyEndLocal.setHours(23, 59, 59, 999);
         const weeklyStartTimestamp = weeklyStartLocal.getTime();
         const weeklyEndTimestamp = weeklyEndLocal.getTime();
 
-        // Para Receita Mensal: baseada no mês da data de fim selecionada (mês local)
-        const monthlyStartLocal = new Date(localEndDate.getFullYear(), localEndDate.getMonth(), 1, 0, 0, 0, 0);
-        const monthlyEndLocal = new Date(localEndDate.getFullYear(), localEndDate.getMonth() + 1, 0, 23, 59, 59, 999); // Último dia do mês
+        // Monthly boundaries (local month, converted to UTC timestamps)
+        const monthlyStartLocal = new Date(endYear, endMonth, 1, 0, 0, 0, 0);
+        const monthlyEndLocal = new Date(endYear, endMonth + 1, 0, 23, 59, 59, 999); // Last day of the month
         const monthlyStartTimestamp = monthlyStartLocal.getTime();
         const monthlyEndTimestamp = monthlyEndLocal.getTime();
         // --- Fim do cálculo dos limites de data ---
