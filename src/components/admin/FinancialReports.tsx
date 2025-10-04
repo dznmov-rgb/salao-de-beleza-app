@@ -120,7 +120,7 @@ export default function FinancialReports() {
               }
 
             } else {
-              console.warn('Service price not found for completed appointment:', appt.id);
+              console.warn('Service price not found for completed appointment:', appt.id, 'Service data:', appt.servico);
             }
             completedCount++;
           } else if (appt.status === 'cancelado') {
