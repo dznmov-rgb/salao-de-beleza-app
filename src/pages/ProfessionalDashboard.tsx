@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LogOut, Scissors, Phone, ArrowRight, ToggleLeft, ToggleRight, CalendarDays } from 'lucide-react';
+import { LogOut, Scissors, Phone, ArrowRight, ToggleLeft, ToggleRight, CalendarDays, CalendarX } from 'lucide-react'; // Importando CalendarX
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import AppointmentDetailsModal from '../components/AppointmentDetailsModal';
@@ -125,6 +125,7 @@ export default function ProfessionalDashboard() {
   
   const totalAgendados = appointmentsToday.filter(a => a.status === 'agendado').length;
   const totalConcluidos = appointmentsToday.filter(a => a.status === 'concluido').length;
+  const totalCancelados = appointmentsToday.filter(a => a.status === 'cancelado').length; // NOVO: Contagem de cancelados
 
 
   return (
@@ -164,7 +165,7 @@ export default function ProfessionalDashboard() {
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Seus Atendimentos</h2>
         
         {/* CARDS DE RESUMO VISUALMENTE MELHORADOS */}
-        <div className="grid grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"> {/* Alterado para 3 colunas */}
             <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-blue-500">
                 <p className="text-gray-500 text-sm">Próximos Agendamentos</p>
                 <p className="text-3xl font-extrabold text-blue-600 mt-1">{totalAgendados}</p>
@@ -172,6 +173,14 @@ export default function ProfessionalDashboard() {
             <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-green-500">
                 <p className="text-gray-500 text-sm">Concluídos no Dia</p>
                 <p className="text-3xl font-extrabold text-green-600 mt-1">{totalConcluidos}</p>
+            </div>
+            {/* NOVO CARD: Agendamentos Cancelados */}
+            <div className="bg-white p-6 rounded-lg shadow-lg border-l-4 border-red-500 flex items-center space-x-4">
+                <CalendarX className="w-8 h-8 text-red-600" /> {/* Usando CalendarX aqui */}
+                <div>
+                    <p className="text-gray-500 text-sm">Cancelados no Dia</p>
+                    <p className="text-3xl font-extrabold text-red-600 mt-1">{totalCancelados}</p>
+                </div>
             </div>
         </div>
 
