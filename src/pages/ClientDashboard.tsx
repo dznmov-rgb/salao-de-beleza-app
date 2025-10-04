@@ -181,7 +181,7 @@ export default function ClientDashboard() {
                 Você tem um agendamento para:
               </p>
               <p className="text-4xl font-extrabold text-blue-700 mb-4">
-                {new Date(nextAppointment.data_hora_inicio).toLocaleDateString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })}
+                {new Date(nextAppointment.data_hora_inicio).toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })}
               </p>
 
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg space-y-2 text-left">
@@ -237,7 +237,7 @@ export default function ClientDashboard() {
               {upcomingAppointments.slice(1).map(appt => ( // Pula o primeiro, que já está no card principal
                 <div key={appt.id} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
                   <p className="font-semibold text-gray-800">
-                    {new Date(appt.data_hora_inicio).toLocaleDateString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })}
+                    {new Date(appt.data_hora_inicio).toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })}
                   </p>
                   <div className="flex items-center space-x-2 text-gray-600 text-sm mt-1">
                     <Scissors size={16} />
@@ -269,7 +269,7 @@ export default function ClientDashboard() {
               {pastAppointments.map(appt => (
                 <div key={appt.id} className="border-b border-gray-200 pb-4 last:border-b-0 last:pb-0">
                   <p className="font-semibold text-gray-800">
-                    {new Date(appt.data_hora_inicio).toLocaleDateString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })}
+                    {new Date(appt.data_hora_inicio).toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })}
                   </p>
                   <div className="flex items-center space-x-2 text-gray-600 text-sm mt-1">
                     <Scissors size={16} />
