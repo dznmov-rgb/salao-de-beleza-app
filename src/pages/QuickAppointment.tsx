@@ -115,12 +115,9 @@ export default function QuickAppointment() {
           
           if (currentClientId) {
             setClientId(currentClientId);
-            // Apenas avança para o passo 4 se o passo atual for 0 ou menor que 4
-            // Isso evita resetar o fluxo se o usuário já estiver em um passo mais avançado (ex: confirmação)
-            if (step < 4 || step === 0) { 
-              setStep(4); 
-            }
-            console.log('QuickAppointment: Client ID set to', currentClientId, 'Step set to', (step < 4 || step === 0) ? 4 : step);
+            // REMOVIDO: A lógica de setStep(4) foi removida daqui.
+            // O App.tsx agora é responsável por redirecionar o cliente para o dashboard.
+            console.log('QuickAppointment: Client ID set to', currentClientId);
           } else {
             setError("Não foi possível identificar ou criar seu perfil de cliente.");
             setStep(0); // Volta para a escolha inicial se o ID do cliente não puder ser estabelecido
@@ -209,8 +206,7 @@ export default function QuickAppointment() {
     setError('');
     try {
       await signIn(clientEmail, clientPassword);
-      // AuthContext useEffect will handle setting user/profile and redirecting if needed
-      // For quick-appointment, it should automatically jump to step 4 via the useEffect above
+      // AuthContext useEffect will handle setting user/profile and App.tsx will handle redirection
     } catch (err: any) {
       console.error("QuickAppointment: Erro no login:", err);
       setError(err.message || 'Email ou senha incorretos.');
@@ -227,8 +223,7 @@ export default function QuickAppointment() {
     try {
       await signUp(clientName, clientEmail, clientPassword, 'client', clientPhone);
       setSuccessMessage('Cadastro realizado com sucesso! Verifique seu e-mail para confirmar a conta. Você será redirecionado para o agendamento.');
-      // AuthContext useEffect will handle setting user/profile and redirecting if needed
-      // For quick-appointment, it should automatically jump to step 4 via the useEffect above
+      // AuthContext useEffect will handle setting user/profile and App.tsx will handle redirection
     } catch (err: any) {
       console.error("QuickAppointment: Erro no cadastro:", err);
       setError(err.message || 'Ocorreu um erro ao criar a conta.');

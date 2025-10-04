@@ -26,21 +26,26 @@ function AppRouter() {
       if (user && profile) {
         // Redirecionar usuários logados de login/cadastro OU quick-appointment para seus respectivos dashboards
         if (currentPath === '/' || currentPath === '/cadastro' || currentPath === '/quick-appointment') {
+          let targetPath = '';
           if (profile.role === 'admin') {
-            window.history.pushState({}, '', '/admin-dashboard');
-            setCurrentPath('/admin-dashboard');
+            targetPath = '/admin-dashboard';
           } else if (profile.role === 'professional') {
-            window.history.pushState({}, '', '/professional-dashboard');
-            setCurrentPath('/professional-dashboard');
+            targetPath = '/professional-dashboard';
           } else if (profile.role === 'client') {
-            window.history.pushState({}, '', '/client-dashboard');
-            setCurrentPath('/client-dashboard');
+            targetPath = '/client-dashboard';
           }
-          return; // Sair cedo após o redirecionamento
+
+          if (targetPath && currentPath !== targetPath) { // Só redireciona se o caminho de destino for diferente do atual
+            console.log(`AppRouter: Redirecionando de ${currentPath} para ${targetPath} para a role ${profile.role}`);
+            window.history.pushState({}, '', targetPath);
+            setCurrentPath(targetPath); // Atualiza o estado local para refletir o novo caminho
+            return; // Sair cedo após o redirecionamento
+          }
         }
       } else { // O usuário NÃO está logado
         // Redirecionar de dashboards protegidos para o login
         if (currentPath === '/admin-dashboard' || currentPath === '/professional-dashboard' || currentPath === '/client-dashboard') {
+          console.log(`AppRouter: Redirecionando usuário não autenticado de ${currentPath} para /`);
           window.history.pushState({}, '', '/');
           setCurrentPath('/');
           return; // Sair cedo após o redirecionamento
