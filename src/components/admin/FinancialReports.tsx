@@ -6,11 +6,12 @@ import { supabase } from '../../lib/supabase';
 type ServiceItem = { preco: number };
 
 // Define a type para a estrutura esperada do agendamento com o preço do serviço
+// Esta é a estrutura que o Supabase retorna com a seleção aninhada 'servico:servicos(preco)'
 type AppointmentWithServicePrice = {
   id: number;
   status: string;
-  servico: ServiceItem[] | null; // CORRIGIDO: 'servico' é um array de ServiceItem ou null
-  data_hora_inicio: string; // Adicionado para filtrar por data
+  data_hora_inicio: string;
+  servico: ServiceItem[] | null; // Supabase retorna como array de ServiceItem ou null
 };
 
 export default function FinancialReports() {
@@ -42,20 +43,18 @@ export default function FinancialReports() {
     });
 
     try {
-      const { data: appointments, error } = await supabase
+      const { data, error } = await supabase
         .from('agendamentos')
         .select(`
           id,
           status,
           data_hora_inicio,
           servico:servicos(preco)
-        `)
-        .gte('data_hora_inicio', `${startDate}T00:00:00.000Z`)
-        .lte('data_hora_inicio', `${endDate}T23:59:59.999Z`);
+        `);
 
       if (error) throw error;
 
-      console.log('Fetched appointments for financial report:', appointments); // LOG DE DEBUG
+      console.log('Fetched appointments for financial report:', data); // LOG DE DEBUG
 
       let calculatedTotalRevenue = 0;
       let calculatedDailyRevenue = 0;
@@ -65,8 +64,14 @@ export default function FinancialReports() {
       let canceledCount = 0;
       let pendingCount = 0;
 
-      if (appointments) {
-        const typedAppointments: AppointmentWithServicePrice[] = appointments as AppointmentWithServicePrice[];
+      if (data) {
+        // Mapeia os dados para garantir a tipagem correta de 'servico'
+        const typedAppointments: AppointmentWithServicePrice[] = data.map((appt: any) => ({
+          id: appt.id,
+          status: appt.status,
+          data_hora_inicio: appt.data_hora_inicio,
+          servico: appt.servico ? appt.servico.map((s: any) => ({ preco: s.preco as number })) : null,
+        }));
 
         // Definir os limites de data para o dia, semana e mês com base na endDate selecionada
         const selectedEndDateObj = new Date(endDate);
