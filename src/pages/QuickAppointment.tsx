@@ -117,10 +117,11 @@ export default function QuickAppointment() {
             setClientId(currentClientId);
             // Se o cliente está logado, pula para o passo de seleção de serviço
             setStep(4); 
-            console.log('QuickAppointment: Client logged in, skipping to step 4 (service selection). Client ID:', currentClientId);
+            console.log('QuickAppointment: Client logged in, skipping to step 4 (service selection). Client ID:', currentClientId, 'Setting step to 4.');
           } else {
             setError("Não foi possível identificar ou criar seu perfil de cliente.");
             setStep(0); // Fallback para a escolha inicial se o ID do cliente não puder ser estabelecido
+            console.log('QuickAppointment: Client ID not established, setting step to 0.');
           }
 
         } else if (!user) { // Se não estiver logado, sempre começa do passo 0
