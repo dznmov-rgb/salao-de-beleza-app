@@ -42,7 +42,15 @@ export default function FinancialReports() {
     });
 
     try {
-      // A consulta ao Supabase já está correta para buscar dentro do período UTC
+      // Convert local startDate and endDate to UTC timestamps for the Supabase query
+      const localStartDateObj = new Date(startDate); // e.g., '2025-10-01' -> 2025-10-01 00:00:00 local
+      localStartDateObj.setHours(0, 0, 0, 0); // Ensure start of day in local timezone
+      const queryStartDateUTC = localStartDateObj.toISOString(); // Convert to UTC ISO string
+
+      const localEndDateObj = new Date(endDate); // e.g., '2025-10-04' -> 2025-10-04 00:00:00 local
+      localEndDateObj.setHours(23, 59, 59, 999); // Ensure end of day in local timezone
+      const queryEndDateUTC = localEndDateObj.toISOString(); // Convert to UTC ISO string
+
       const { data: appointments, error } = await supabase
         .from('agendamentos')
         .select(`
@@ -51,8 +59,8 @@ export default function FinancialReports() {
           data_hora_inicio,
           servico:servicos(preco)
         `)
-        .gte('data_hora_inicio', `${startDate}T00:00:00.000Z`)
-        .lte('data_hora_inicio', `${endDate}T23:59:59.999Z`);
+        .gte('data_hora_inicio', queryStartDateUTC)
+        .lte('data_hora_inicio', queryEndDateUTC);
 
       if (error) throw error;
 
