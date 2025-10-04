@@ -13,61 +13,75 @@ export default function TeamManagement() {
     commission_percentage: 0,
     password: ''
   });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(''); // Adicionado estado de erro
 
   useEffect(() => {
     loadProfessionals();
   }, []);
 
   const loadProfessionals = async () => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('role', 'professional')
-      .order('full_name');
-    if (data) setProfessionals(data);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('role', 'professional')
+        .order('full_name');
+      
+      if (error) {
+        console.error('Erro ao carregar profissionais:', error);
+        // Opcional: setError('Não foi possível carregar a lista de profissionais.');
+        return;
+      }
+      if (data) setProfessionals(data || []);
+    } catch (err: any) {
+      console.error('Erro inesperado ao carregar profissionais:', err);
+      // Opcional: setError('Ocorreu um erro inesperado ao carregar profissionais.');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); // Limpa erros anteriores
+    setLoading(true); // Ativa o estado de carregamento
 
-    if (editingId) {
-      await supabase
-        .from('profiles')
-        .update({
-          full_name: formData.full_name,
-          telefone: formData.telefone,
-          commission_percentage: formData.commission_percentage
-        })
-        .eq('id', editingId);
-    } else {
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
+    try {
+      if (editingId) {
+        const { error } = await supabase
+          .from('profiles')
+          .update({
             full_name: formData.full_name,
-            role: 'professional', // Definir a role como 'professional'
-            phone: formData.telefone // Passar o telefone para o trigger
+            telefone: formData.telefone,
+            commission_percentage: formData.commission_percentage
+          })
+          .eq('id', editingId);
+        
+        if (error) throw error; // Lança o erro se a atualização falhar
+      } else {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.full_name,
+              role: 'professional', // Definir a role como 'professional'
+              phone: formData.telefone // Passar o telefone para o trigger
+            }
           }
-        }
-      });
+        });
 
-      if (authData.user && !authError) {
-        // O trigger handle_new_user já deve criar o perfil, mas garantimos aqui se necessário
-        // await supabase.from('profiles').insert({
-        //   id: authData.user.id,
-        //   full_name: formData.full_name,
-        //   email: formData.email,
-        //   telefone: formData.telefone,
-        //   role: 'professional',
-        //   commission_percentage: formData.commission_percentage,
-        //   is_working: true
-        // });
+        if (authError) throw authError; // Lança o erro se o cadastro falhar
+        if (!authData.user) throw new Error('Usuário não retornado após o cadastro.');
       }
-    }
 
-    resetForm();
-    loadProfessionals();
+      resetForm();
+      loadProfessionals(); // Recarrega a lista para mostrar as alterações
+    } catch (err: any) {
+      console.error('Erro ao salvar profissional:', err);
+      setError(err.message || 'Erro ao salvar profissional. Verifique os dados e tente novamente.'); // Exibe o erro para o usuário
+    } finally {
+      setLoading(false); // Desativa o estado de carregamento
+    }
   };
 
   const handleEdit = (professional: Profile) => {
@@ -83,12 +97,23 @@ export default function TeamManagement() {
   };
 
   const handleToggleStatus = async (id: string, currentStatus: boolean | null) => { // Aceita boolean | null
-    const newStatus = !currentStatus; // Inverte o status atual (considerando null como false para inversão)
-    await supabase
-      .from('profiles')
-      .update({ is_working: newStatus })
-      .eq('id', id);
-    loadProfessionals();
+    setLoading(true);
+    setError('');
+    try {
+      const newStatus = !currentStatus; // Inverte o status atual (considerando null como false para inversão)
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_working: newStatus })
+        .eq('id', id);
+      
+      if (error) throw error;
+      loadProfessionals();
+    } catch (err: any) {
+      console.error('Erro ao alternar status:', err);
+      setError(err.message || 'Erro ao alternar o status do profissional.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const resetForm = () => {
@@ -101,6 +126,7 @@ export default function TeamManagement() {
     });
     setEditingId(null);
     setShowModal(false);
+    setError(''); // Limpa o erro ao fechar o modal
   };
 
   return (
@@ -191,6 +217,12 @@ export default function TeamManagement() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">Nome</label>
                 <input
@@ -267,9 +299,10 @@ export default function TeamManagement() {
                 </button>
                 <button
                   type="submit"
+                  disabled={loading}
                   className="flex-1 bg-slate-900 text-white py-2 rounded-lg hover:bg-slate-800 transition text-sm"
                 >
-                  {editingId ? 'Salvar' : 'Criar'}
+                  {loading ? 'Salvando...' : editingId ? 'Salvar' : 'Criar'}
                 </button>
               </div>
             </form>
