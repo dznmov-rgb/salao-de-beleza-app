@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, Cliente } from '../lib/supabase'; // Importa Cliente de supabase.ts
 import { X } from 'lucide-react';
 
-type Cliente = {
-  id?: number;
-  nome_completo: string;
-  telefone: string;
-};
+// O tipo Cliente agora é importado, então removemos a definição local.
 
 type Props = {
-  clientToEdit?: Cliente | null;
+  clientToEdit?: Cliente | null; // Usa o tipo Cliente importado
   onClose: () => void;
   onSuccess: () => void;
 };
@@ -22,8 +18,11 @@ export default function ClientModal({ clientToEdit, onClose, onSuccess }: Props)
 
   useEffect(() => {
     if (clientToEdit) {
-      setNomeCompleto(clientToEdit.nome_completo);
-      setTelefone(clientToEdit.telefone);
+      setNomeCompleto(clientToEdit.nome_completo || ''); // Adiciona fallback para string vazia
+      setTelefone(clientToEdit.telefone || ''); // Adiciona fallback para string vazia
+    } else {
+      setNomeCompleto(''); // Limpa o formulário ao adicionar novo
+      setTelefone('');    // Limpa o formulário ao adicionar novo
     }
   }, [clientToEdit]);
 

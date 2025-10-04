@@ -29,8 +29,8 @@ export type Servico = {
 export type Cliente = {
   id: number;
   user_id: string | null; // Adicionado user_id para vincular ao auth.users
-  nome_completo: string;
-  telefone: string;
+  nome_completo: string | null; // Alterado para ser anulável
+  telefone: string | null; // Alterado para ser anulável
   created_at: string;
 };
 
