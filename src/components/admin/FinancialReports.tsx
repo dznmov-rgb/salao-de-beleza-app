@@ -9,7 +9,7 @@ type ServiceItem = { preco: number };
 type AppointmentWithServicePrice = {
   id: number;
   status: string;
-  servico: ServiceItem[] | null; // Corrigido: 'servico' é um array de ServiceItem ou null
+  servico: ServiceItem[] | null; // CORRIGIDO: 'servico' é um array de ServiceItem ou null
   data_hora_inicio: string; // Adicionado para filtrar por data
 };
 
