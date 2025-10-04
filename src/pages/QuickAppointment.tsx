@@ -207,7 +207,9 @@ export default function QuickAppointment() {
     setError('');
     try {
       await signIn(clientEmail, clientPassword);
-      // AuthContext useEffect will handle setting user/profile and App.tsx will handle redirection
+      // Após login bem-sucedido, redireciona para o dashboard do cliente
+      window.history.pushState({}, '', '/client-dashboard');
+      window.location.reload(); // Força um recarregamento para garantir que o AppRouter reavalie
     } catch (err: any) {
       console.error("QuickAppointment: Erro no login:", err);
       setError(err.message || 'Email ou senha incorretos.');
@@ -223,8 +225,9 @@ export default function QuickAppointment() {
     setSuccessMessage('');
     try {
       await signUp(clientName, clientEmail, clientPassword, 'client', clientPhone);
-      setSuccessMessage('Cadastro realizado com sucesso! Verifique seu e-mail para confirmar a conta. Você será redirecionado para o agendamento.');
-      // AuthContext useEffect will handle setting user/profile and App.tsx will handle redirection
+      // Após cadastro bem-sucedido, redireciona para o dashboard do cliente
+      window.history.pushState({}, '', '/client-dashboard');
+      window.location.reload(); // Força um recarregamento para garantir que o AppRouter reavalie
     } catch (err: any) {
       console.error("QuickAppointment: Erro no cadastro:", err);
       setError(err.message || 'Ocorreu um erro ao criar a conta.');
