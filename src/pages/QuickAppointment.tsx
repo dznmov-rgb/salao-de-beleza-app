@@ -258,6 +258,77 @@ export default function QuickAppointment() {
     }
   };
 
+  // NOVA FUNÇÃO: Buscar horários disponíveis
+  const fetchAvailableSlots = async () => {
+    if (!selectedDate || !selectedService || !selectedProfessional) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const dayStart = new Date(selectedDate);
+      dayStart.setHours(8, 0, 0, 0); // Salon opens at 8 AM
+
+      const dayEnd = new Date(selectedDate);
+      dayEnd.setHours(20, 0, 0, 0); // Salon closes at 8 PM
+
+      // Fetch existing appointments for the selected day
+      let query = supabase
+        .from('agendamentos')
+        .select('data_hora_inicio, data_hora_fim')
+        .gte('data_hora_inicio', dayStart.toISOString())
+        .lt('data_hora_inicio', dayEnd.toISOString())
+        .neq('status', 'cancelado'); // Exclude canceled appointments
+
+      if (selectedProfessional !== 'any') {
+        query = query.eq('id_profissional', (selectedProfessional as Profile).id);
+      }
+
+      const { data: existingAppointments, error: apptError } = await query;
+      if (apptError) throw apptError;
+
+      const occupiedSlots: { start: Date; end: Date }[] = (existingAppointments || []).map(appt => ({
+        start: new Date(appt.data_hora_inicio),
+        end: new Date(appt.data_hora_fim),
+      }));
+
+      const potentialSlots: Date[] = [];
+      let currentTime = new Date(dayStart);
+
+      while (currentTime.getTime() + selectedService.duracao_media_minutos * 60000 <= dayEnd.getTime()) {
+        const slotEnd = new Date(currentTime.getTime() + selectedService.duracao_media_minutos * 60000);
+        
+        // Check if this potential slot overlaps with any existing appointment
+        const isOverlapping = occupiedSlots.some(occupied => {
+          return (
+            (currentTime.getTime() < occupied.end.getTime() && slotEnd.getTime() > occupied.start.getTime())
+          );
+        });
+
+        // Also check if the slot starts before the current time (to avoid showing past slots on the current day)
+        const now = new Date();
+        const isPast = currentTime.getTime() < now.getTime();
+
+        if (!isOverlapping && !isPast) {
+          potentialSlots.push(new Date(currentTime));
+        }
+        
+        currentTime.setMinutes(currentTime.getMinutes() + selectedService.duracao_media_minutos);
+      }
+      
+      setAvailableSlots(potentialSlots);
+
+    } catch (err: any) {
+      console.error("QuickAppointment: Erro ao carregar horários disponíveis:", err);
+      setError('Não foi possível carregar os horários disponíveis.');
+      setAvailableSlots([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loadStepData = async () => {
       setLoading(true);
@@ -281,6 +352,16 @@ export default function QuickAppointment() {
     loadStepData();
   }, [step]);
 
+  // NOVO useEffect para buscar horários disponíveis quando as dependências mudam
+  useEffect(() => {
+    if (selectedDate && selectedService && selectedProfessional) {
+      fetchAvailableSlots();
+    } else {
+      setAvailableSlots([]); // Limpa os horários se as pré-condições não forem atendidas
+    }
+  }, [selectedDate, selectedService, selectedProfessional]);
+
+
   const handleNextStep = () => {
     console.log('QuickAppointment: Moving to next step:', step + 1);
     setStep(prev => prev + 1);
@@ -293,7 +374,7 @@ export default function QuickAppointment() {
   const handleDateSelect = (date: Date) => {
     console.log('QuickAppointment: Date selected:', date);
     setSelectedDate(date);
-    setAvailableSlots([]);
+    setAvailableSlots([]); // Limpa os slots para que a nova busca seja acionada
   };
 
   const getNext7Days = () => {
