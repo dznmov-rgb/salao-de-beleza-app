@@ -26,55 +26,78 @@ export default function QuickAppointment() {
 
   // Efeito para preencher nome e telefone se o cliente estiver logado
   useEffect(() => {
+    console.log('QuickAppointment: User/Profile useEffect triggered. User:', user?.id, 'Profile Role:', profile?.role);
     if (user && profile && profile.role === 'client') {
       setClientName(profile.full_name || '');
       setClientPhone(profile.telefone || '');
       setClientEmail(profile.email || '');
-      // Tenta encontrar o cliente existente ou cria um novo e vincula ao user_id
-      const findOrCreateClient = async () => {
+      
+      const findOrCreateAndLinkClient = async () => {
         setLoading(true);
+        setError(''); // Clear previous errors
         try {
-          let { data: existingClient } = await supabase
+          let currentClientId: number | null = null;
+
+          // 1. Tenta encontrar o cliente pelo user_id (se já estiver vinculado)
+          let { data: existingClientByUser } = await supabase
             .from('clientes')
             .select('id')
             .eq('user_id', user!.id)
             .maybeSingle();
 
-          if (existingClient) {
-            setClientId(existingClient.id);
+          if (existingClientByUser) {
+            currentClientId = existingClientByUser.id;
+            console.log('QuickAppointment: Found client by user_id:', currentClientId);
           } else {
-            // Se não encontrou pelo user_id, tenta pelo telefone/email
-            let { data: clientByPhone } = await supabase
+            // 2. Se não encontrou pelo user_id, tenta encontrar pelo telefone (para agendamentos de convidado)
+            let { data: existingClientByPhone } = await supabase
               .from('clientes')
               .select('id, nome_completo')
               .eq('telefone', profile.telefone)
               .maybeSingle();
 
-            if (clientByPhone) {
-              // Se encontrou pelo telefone, atualiza para vincular ao user_id
-              await supabase.from('clientes').update({ user_id: user!.id }).eq('id', clientByPhone.id);
-              setClientId(clientByPhone.id);
+            if (existingClientByPhone) {
+              // 3. Se encontrou pelo telefone, atualiza para vincular ao user_id
+              console.log('QuickAppointment: Found client by phone, linking to user_id:', existingClientByPhone.id);
+              const { error: updateError } = await supabase.from('clientes').update({ user_id: user!.id }).eq('id', existingClientByPhone.id);
+              if (updateError) throw updateError;
+              currentClientId = existingClientByPhone.id;
             } else {
-              // Se não encontrou, cria um novo cliente e vincula ao user_id
-              const { data: newClient } = await supabase
+              // 4. Se não encontrou de nenhuma forma, cria um novo cliente e vincula ao user_id
+              console.log('QuickAppointment: No existing client found, creating new and linking to user_id.');
+              const { data: newClient, error: insertError } = await supabase
                 .from('clientes')
                 .insert({ nome_completo: profile.full_name, telefone: profile.telefone, user_id: user!.id })
                 .select('id')
                 .single();
+              if (insertError) throw insertError;
               if (newClient) {
-                setClientId(newClient.id);
+                currentClientId = newClient.id;
               }
             }
           }
-          setStep(4); // Pula para a escolha do serviço se já estiver logado como cliente
+          
+          if (currentClientId) {
+            setClientId(currentClientId);
+            setStep(4); // Pula para a escolha do serviço se já estiver logado como cliente
+          } else {
+            setError("Não foi possível identificar ou criar seu perfil de cliente.");
+          }
+
         } catch (err) {
-          console.error("Erro ao vincular cliente logado:", err);
+          console.error("QuickAppointment: Erro ao vincular cliente logado:", err);
           setError("Erro ao carregar seus dados de cliente.");
         } finally {
           setLoading(false);
         }
       };
-      findOrCreateClient();
+      findOrCreateAndLinkClient();
+    } else if (!user && profile?.role === 'client') { // This case should not happen, but for safety
+        console.log('QuickAppointment: User is null but profile role is client. Resetting step.');
+        setStep(0);
+    } else if (!user) { // If not logged in, start from step 0
+        console.log('QuickAppointment: User is not logged in. Starting from step 0.');
+        setStep(0);
     }
   }, [user, profile]);
 
@@ -93,7 +116,7 @@ export default function QuickAppointment() {
 
       if (existingClient) {
         setClientId(existingClient.id);
-        setClientName(existingClient.nome_completo);
+        setClientName(existingClient.nome_completo || ''); // Ensure string
       } else {
         const { data: newClient } = await supabase
           .from('clientes')
@@ -106,7 +129,7 @@ export default function QuickAppointment() {
       }
       setStep(4); // Próximo passo: Escolha o Serviço
     } catch (err: any) {
-      console.error(err);
+      console.error("QuickAppointment: Erro na identificação do convidado:", err);
       setError("Ocorreu um erro na identificação. Tente novamente.");
     } finally {
       setLoading(false);
@@ -122,6 +145,7 @@ export default function QuickAppointment() {
       // AuthContext useEffect will handle setting user/profile and redirecting if needed
       // For quick-appointment, it should automatically jump to step 4 via the useEffect above
     } catch (err: any) {
+      console.error("QuickAppointment: Erro no login:", err);
       setError(err.message || 'Email ou senha incorretos.');
     } finally {
       setLoading(false);
@@ -139,6 +163,7 @@ export default function QuickAppointment() {
       // AuthContext useEffect will handle setting user/profile and redirecting if needed
       // For quick-appointment, it should automatically jump to step 4 via the useEffect above
     } catch (err: any) {
+      console.error("QuickAppointment: Erro no cadastro:", err);
       setError(err.message || 'Ocorreu um erro ao criar a conta.');
     } finally {
       setLoading(false);
@@ -149,6 +174,13 @@ export default function QuickAppointment() {
     setLoading(true);
     setError('');
     try {
+      console.log('QuickAppointment: Confirming appointment with data:', {
+        id_cliente: clientId,
+        id_servico: selectedService!.id,
+        id_profissional: selectedProfessional === 'any' ? null : selectedProfessional!.id,
+        data_hora_inicio: selectedDateTime!.toISOString(),
+        data_hora_fim: new Date(selectedDateTime!.getTime() + selectedService!.duracao_media_minutos * 60000).toISOString()
+      });
       const { error } = await supabase.from('agendamentos').insert({
         id_cliente: clientId,
         id_servico: selectedService!.id,
@@ -157,9 +189,10 @@ export default function QuickAppointment() {
         data_hora_fim: new Date(selectedDateTime!.getTime() + selectedService!.duracao_media_minutos * 60000).toISOString()
       });
       if (error) throw error;
+      console.log('QuickAppointment: Appointment confirmed successfully.');
       setStep(8); // Novo passo de sucesso
     } catch (err) {
-      console.error(err);
+      console.error("QuickAppointment: Erro ao salvar agendamento:", err);
       setError('Erro ao salvar agendamento.');
     } finally {
       setLoading(false);
@@ -177,7 +210,9 @@ export default function QuickAppointment() {
         .order('nome_servico');
       if (error) throw error;
       setServices(data || []);
+      console.log('QuickAppointment: Services fetched:', data);
     } catch (err: any) {
+      console.error("QuickAppointment: Erro ao carregar serviços:", err);
       setError('Não foi possível carregar os serviços.');
     } finally {
       setLoading(false);
@@ -195,7 +230,9 @@ export default function QuickAppointment() {
         .eq('is_working', true); // Apenas profissionais em expediente
       if (error) throw error;
       setProfessionals(data || []);
+      console.log('QuickAppointment: Professionals fetched:', data);
     } catch (err: any) {
+      console.error("QuickAppointment: Erro ao carregar profissionais:", err);
       setError('Não foi possível carregar os profissionais.');
     } finally {
       setLoading(false);
@@ -208,12 +245,15 @@ export default function QuickAppointment() {
       setError('');
       try {
         if (step === 4 && services.length === 0) { // Antigo step 2
+          console.log('QuickAppointment: Loading services for step 4.');
           await fetchServices();
         }
         if (step === 5 && professionals.length === 0) { // Antigo step 3
+          console.log('QuickAppointment: Loading professionals for step 5.');
           await fetchProfessionals();
         }
       } catch (err: any) {
+        console.error("QuickAppointment: Erro ao carregar dados do passo:", err);
         setError('Não foi possível carregar os dados. Tente novamente.');
       } finally {
         setLoading(false);
@@ -233,7 +273,7 @@ export default function QuickAppointment() {
     let query = supabase.from('agendamentos').select('data_hora_inicio, data_hora_fim').gte('data_hora_inicio', dayStart).lte('data_hora_inicio', dayEnd);
     if (professionalId) { query = query.eq('id_profissional', professionalId); }
     const { data: existingAppointments, error } = await query;
-    if (error) { console.error(error); setLoading(false); return; }
+    if (error) { console.error("QuickAppointment: Erro ao buscar agendamentos existentes:", error); setLoading(false); return; }
     const busySlots = existingAppointments.map(appt => ({ start: new Date(appt.data_hora_inicio), end: new Date(appt.data_hora_fim) }));
     const slots: Date[] = [];
     const workDayStart = 9, workDayEnd = 18, slotInterval = 30;
@@ -251,20 +291,27 @@ export default function QuickAppointment() {
     }
     setAvailableSlots(slots);
     setLoading(false);
+    console.log('QuickAppointment: Available slots calculated:', slots);
   };
 
   useEffect(() => {
     if (selectedDate && selectedService && selectedProfessional) {
+      console.log('QuickAppointment: Recalculating available slots due to selection change.');
       calculateAvailableSlots(selectedDate);
     }
   }, [selectedDate, selectedProfessional, selectedService]);
 
-  const handleNextStep = () => setStep(prev => prev + 1);
+  const handleNextStep = () => {
+    console.log('QuickAppointment: Moving to next step:', step + 1);
+    setStep(prev => prev + 1);
+  }
   const handleBackStep = () => { 
+    console.log('QuickAppointment: Moving to previous step:', step - 1);
     if (step === 6) setSelectedDate(null); // Se voltar da escolha de data/hora
     setStep(prev => prev - 1); 
   };
   const handleDateSelect = (date: Date) => {
+    console.log('QuickAppointment: Date selected:', date);
     setSelectedDate(date);
     setAvailableSlots([]);
   };

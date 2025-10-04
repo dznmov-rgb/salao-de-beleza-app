@@ -10,8 +10,12 @@ export default function ClientDashboard() {
   const [error, setError] = useState('');
   const [timeLeft, setTimeLeft] = useState<string>('');
 
+  console.log('ClientDashboard: Component Rendered. User:', user?.id, 'Profile Role:', profile?.role, 'Loading:', loading, 'Error:', error);
+
   const fetchAppointments = async () => {
+    console.log('ClientDashboard: fetchAppointments called.');
     if (!user || !profile || profile.role !== 'client') {
+      console.log('ClientDashboard: Not authorized or no user/profile for client role. User:', user?.id, 'Profile Role:', profile?.role);
       setLoading(false);
       return;
     }
@@ -29,10 +33,11 @@ export default function ClientDashboard() {
       if (!clientData) {
         setError('Dados do cliente não encontrados. Por favor, tente fazer login novamente ou cadastre-se.');
         setLoading(false);
+        console.log('ClientDashboard: Client data not found for user ID:', user.id);
         return;
       }
 
-      console.log('Client ID for fetching appointments:', clientData.id); // Log para depuração
+      console.log('ClientDashboard: Client ID for fetching appointments:', clientData.id);
 
       const { data, error } = await supabase
         .from('agendamentos')
@@ -46,17 +51,19 @@ export default function ClientDashboard() {
 
       if (error) throw error;
       setAppointments(data || []);
-      console.log('Fetched appointments:', data); // Log para depuração
+      console.log('ClientDashboard: Fetched appointments:', data);
 
     } catch (err: any) {
-      console.error('Erro ao buscar agendamentos:', err);
+      console.error('ClientDashboard: Erro ao buscar agendamentos:', err);
       setError('Não foi possível carregar seus agendamentos.');
     } finally {
       setLoading(false);
+      console.log('ClientDashboard: fetchAppointments finished. Loading:', false);
     }
   };
 
   useEffect(() => {
+    console.log('ClientDashboard: useEffect triggered for user/profile change.');
     fetchAppointments();
   }, [user, profile]);
 
