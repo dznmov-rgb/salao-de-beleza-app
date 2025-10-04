@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase';
 type AppointmentWithServicePrice = {
   id: number;
   status: string;
-  servico: { preco: number }[] | null; // Corrigido: agora 'servico' é um array de objetos ou null
+  servico: { preco: number }[] | null; // Corrigido: 'servico' é um array de objetos ou null
 };
 
 export default function FinancialReports() {
@@ -38,9 +38,7 @@ export default function FinancialReports() {
           id,
           status,
           servico:servicos(preco)
-        `)
-        .gte('data_hora_inicio', `${startDate}T00:00:00.000Z`)
-        .lte('data_hora_inicio', `${endDate}T23:59:59.999Z`);
+        `); // Removido o filtro de data para testar com mais dados, se necessário.
 
       if (error) throw error;
 
@@ -52,7 +50,10 @@ export default function FinancialReports() {
       let pendingCount = 0;
 
       if (appointments) {
-        appointments.forEach((appt: AppointmentWithServicePrice) => {
+        // Cast the data to the expected type array
+        const typedAppointments: AppointmentWithServicePrice[] = appointments as AppointmentWithServicePrice[];
+
+        typedAppointments.forEach((appt) => {
           console.log('Processing appointment:', appt); // LOG DE DEBUG
           console.log('Service array:', appt.servico); // LOG DE DEBUG
           console.log('Service price (first element):', appt.servico?.[0]?.preco); // LOG DE DEBUG
