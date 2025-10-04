@@ -24,19 +24,12 @@ function AppRouter() {
     if (!loading) {
       // Se o usuário está logado e tem um perfil
       if (user && profile) {
-        // Lógica específica para /quick-appointment
+        // Lógica específica para /quick-appointment:
+        // Se qualquer usuário autenticado (admin, professional, client) acessa /quick-appointment,
+        // ele deve permanecer lá. O componente QuickAppointment lidará com a lógica interna.
         if (currentPath === '/quick-appointment') {
-          if (profile.role === 'client') {
-            // Se um cliente está logado e na página de agendamento rápido, redireciona para o painel do cliente
-            console.log(`AppRouter: Cliente logado, redirecionando de /quick-appointment para /client-dashboard.`);
-            window.history.pushState({}, '', '/client-dashboard');
-            setCurrentPath('/client-dashboard');
-            return;
-          }
-          // Se admin/profissional está logado, permite que permaneça em /quick-appointment
-          // Eles podem estar testando o fluxo ou agendando para outra pessoa.
-          console.log(`AppRouter: Admin/Profissional logado, permanecendo em /quick-appointment.`);
-          return;
+          console.log(`AppRouter: Usuário logado (${profile.role}), permanecendo em /quick-appointment.`);
+          return; // Permite que o QuickAppointment seja renderizado
         }
 
         // Redirecionamento geral para outras rotas (login, cadastro)

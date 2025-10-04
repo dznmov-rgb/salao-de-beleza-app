@@ -115,12 +115,12 @@ export default function QuickAppointment() {
           
           if (currentClientId) {
             setClientId(currentClientId);
-            // REMOVIDO: A lógica de setStep(4) foi removida daqui.
-            // O App.tsx agora é responsável por redirecionar o cliente para o dashboard.
-            console.log('QuickAppointment: Client ID set to', currentClientId);
+            // Se o cliente está logado, pula para o passo de seleção de serviço
+            setStep(4); 
+            console.log('QuickAppointment: Client logged in, skipping to step 4 (service selection). Client ID:', currentClientId);
           } else {
             setError("Não foi possível identificar ou criar seu perfil de cliente.");
-            setStep(0); // Volta para a escolha inicial se o ID do cliente não puder ser estabelecido
+            setStep(0); // Fallback para a escolha inicial se o ID do cliente não puder ser estabelecido
           }
 
         } else if (!user) { // Se não estiver logado, sempre começa do passo 0
@@ -135,7 +135,7 @@ export default function QuickAppointment() {
       } catch (err) {
         console.error("QuickAppointment: Erro durante a inicialização:", err);
         setError("Ocorreu um erro ao inicializar a página.");
-        setStep(0); // Volta para o passo 0 em caso de erro
+        setStep(0);
       } finally {
         setLoading(false); // Garante que o loading seja desativado em todos os cenários
       }
@@ -430,18 +430,8 @@ export default function QuickAppointment() {
     return days;
   };
 
-  // Adicionado: Se o usuário já está logado como cliente, mostra um estado de carregamento
-  // e permite que o App.tsx o redirecione.
-  if (!authLoading && user && profile && profile.role === 'client') {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-blue-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Redirecionando para o seu painel...</p>
-        </div>
-      </div>
-    );
-  }
+  // REMOVIDO: O bloco de redirecionamento interno para clientes foi removido daqui.
+  // O App.tsx agora permite que clientes acessem esta página.
 
   const renderStepContent = () => {
     if (loading) return <p className="text-center text-gray-500">Carregando...</p>;
